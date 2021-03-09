@@ -236,7 +236,7 @@ Page {
 
                 onCheckedChanged: {
 
-                    settings.recentsOldToNew = !settings.recentsOldToNew;
+                    settings.recentsOldToNew = checked;
                     settings.sync();
 
                 }
@@ -251,7 +251,7 @@ Page {
 
                 onCheckedChanged: {
 
-                    settings.recentsShowBalances = !settings.recentsShowBalances;
+                    settings.recentsShowBalances = checked;
                     settings.sync();
 
                 }
