@@ -18,10 +18,7 @@ Page {
 
     }
 
-    // need to load default account first
     Component.onCompleted: {
-
-        // grab default account, set it to current index of combo as well as using it to gather recents.
 
         chosenRecentsAccount = settings.defaultAccountIndex;
 
@@ -99,8 +96,6 @@ Page {
 
             }
 
-            // in effect an 'else' but outside of the for loop as necessary so just a regular 'if'
-            // we can now add in reverse order if chosen by user (or just left as default).
             if (settings.recentsOldToNew === false) {
 
                 for (var k = 0; k < recentTransactionList.data.transactions.length; k++) {
@@ -155,7 +150,7 @@ Page {
                             workingBalance = (workingBalanceFigure / 10).toString();
 
                             // place group separators
-                            if (workingBalance.length > 3) { // we know number of decimal places so group separator requirement if fixed at 8 (incl. decimal separator)
+                            if (workingBalance.length > 3) {
 
                                 workingBalance = workingBalance.slice(0, (workingBalance.length - 3)) + groupSeparator + workingBalance.slice((workingBalance.length - 3), workingBalance.length);
 
@@ -177,7 +172,7 @@ Page {
                             workingBalance = workingBalance.slice(0, (workingBalance.length - decimalPlaces)) + decimalSeparator + workingBalance.slice((workingBalance.length - decimalPlaces), workingBalance.length);
 
                             // place group separators
-                            if (workingBalance.length > 6) { // we know number of decimal places so group separator requirement if fixed at 7 (incl. decimal separator)
+                            if (workingBalance.length > 6) {
 
                                 workingBalance = workingBalance.slice(0, (workingBalance.length - 6)) + groupSeparator + workingBalance.slice((workingBalance.length - 6), workingBalance.length);
 
@@ -193,13 +188,13 @@ Page {
                             workingBalance = workingBalance.slice(0, (workingBalance.length - decimalPlaces)) + decimalSeparator + workingBalance.slice((workingBalance.length - decimalPlaces), workingBalance.length);
 
                             // place group separators
-                            if (workingBalance.length > 7) { // we know number of decimal places so group separator requirement if fixed at 8 (incl. decimal separator)
+                            if (workingBalance.length > 7) {
 
                                 workingBalance = workingBalance.slice(0, (workingBalance.length - 7)) + groupSeparator + workingBalance.slice((workingBalance.length - 7), workingBalance.length);
 
                                 if (workingBalance.length > 11) workingBalance = workingBalance.slice(0, (workingBalance.length - 11)) + groupSeparator + workingBalance.slice((workingBalance.length - 11), workingBalance.length);
 
-                        }
+                            }
 
                     }
 
@@ -242,7 +237,7 @@ Page {
                             clearedBalance = (clearedBalanceFigure / 10).toString();
 
                             // place group separators
-                            if (clearedBalance.length > 3) { // we know number of decimal places so group separator requirement if fixed at 8 (incl. decimal separator)
+                            if (clearedBalance.length > 3) {
 
                                 clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 3)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 3), clearedBalance.length);
 
@@ -264,7 +259,7 @@ Page {
                             clearedBalance = clearedBalance.slice(0, (clearedBalance.length - decimalPlaces)) + decimalSeparator + clearedBalance.slice((clearedBalance.length - decimalPlaces), clearedBalance.length);
 
                             // place group separators
-                            if (clearedBalance.length > 6) { // we know number of decimal places so group separator requirement if fixed at 7 (incl. decimal separator)
+                            if (clearedBalance.length > 6) {
 
                                 clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 6)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 6), clearedBalance.length);
 
@@ -280,13 +275,13 @@ Page {
                             clearedBalance = clearedBalance.slice(0, (clearedBalance.length - decimalPlaces)) + decimalSeparator + clearedBalance.slice((clearedBalance.length - decimalPlaces), clearedBalance.length);
 
                             // place group separators
-                            if (clearedBalance.length > 7) { // we know number of decimal places so group separator requirement if fixed at 8 (incl. decimal separator)
+                            if (clearedBalance.length > 7) {
 
                                 clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 7)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 7), clearedBalance.length);
 
                                 if (clearedBalance.length > 11) clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 11)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 11), clearedBalance.length);
 
-                        }
+                            }
 
                     }
 
@@ -294,9 +289,6 @@ Page {
                     else clearedBalance = currencySymbol[0] + clearedBalance + currencySymbol[1];
 
                 }
-
-
-
 
             });
 
@@ -372,14 +364,14 @@ Page {
                                                 recentsPayee[j] = recentTransactionList.data.transactions[i].payee_name;
                                                 recentsCategory[j] = recentTransactionList.data.transactions[i].category_name;
 
-                                                if (recentTransactionList.data.transactions[i].amount >= 0) { // amount is income
+                                                if (recentTransactionList.data.transactions[i].amount >= 0) {
 
                                                     recentsInflow[j] = currencySymbol[0] + ((recentTransactionList.data.transactions[i].amount / 1000).toFixed(2)) + currencySymbol[1];
                                                     recentsOutflow[j] = "";
 
                                                 }
 
-                                                else { // amount is expenditure, dividing by -1000 as we don't need minus sign in column
+                                                else {
 
                                                     recentsOutflow[j] = currencySymbol[0] + ((recentTransactionList.data.transactions[i].amount / -1000).toFixed(2)) + currencySymbol[1];
                                                     recentsInflow[j] = "";
@@ -389,7 +381,6 @@ Page {
                                                 if (recentTransactionList.data.transactions[i].cleared === "cleared" || recentTransactionList.data.transactions[i].cleared === "reconciled") recentsUncleared[j] = false;
                                                 else recentsUncleared[j] = true;
 
-                                                // if user has chosen to list recents as oldest to newest, we can just add each one now as the order doesn't need to be reversed.
                                                 if (settings.recentsOldToNew === true) {
 
                                                     recentTransactionsModel.append({ date: recentsDate[j], payee: recentsPayee[j], category: recentsCategory[j], inflow: recentsInflow[j], outflow: recentsOutflow[j], uncleared: recentsUncleared[j] });
@@ -398,8 +389,6 @@ Page {
 
                                             }
 
-                                            // in effect an 'else' but outside of the for loop as necessary so just a regular 'if'
-                                            // we can now add in reverse order if chosen by user (or just left as default).
                                             if (settings.recentsOldToNew === false) {
 
                                                 for (var k = 0; k < recentTransactionList.data.transactions.length; k++) {
@@ -680,13 +669,13 @@ Page {
 
                     if (recentTransactionListFromServer.status === 200) {
 
-                        console.log("Recent Transactions gathered successfully.");
+                        // Transactions should load without any problems.
 
                     }
 
                     else {
 
-                        console.log("Recent Transactions gather attempt unsuccessful.");
+                        // Recent Transactions gather attempt unsuccessful. Need response code and error handling.
 
                     }
 
@@ -718,13 +707,13 @@ Page {
 
                     if (accountBalancesFromServer.status === 200) {
 
-                        console.log("Account balances gathered successfully.");
+                        // Account balances gathered successfully
 
                     }
 
                     else {
 
-                        console.log("Account balances gathering attempt unsuccessful.");
+                        // Need response code and error handling.
 
                     }
 
