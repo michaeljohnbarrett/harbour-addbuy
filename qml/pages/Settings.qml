@@ -343,10 +343,8 @@ Page {
                             width: parent.width
                             id: aboutTextLabel
                             font.pixelSize: Theme.fontSizeExtraSmall
-                            //font.italic: true
                             font.styleName: Theme.primaryColor
                             wrapMode: Text.Wrap
-                            // text: "If this app is of regular good use, or you'd just like to support the future development of native Sailfish OS apps that utilize public APIs of popular online services, please consider donating using this link. Thanks --MJB"
                             text: "A simple transaction-entry app for YNAB users on Sailfish OS.\n\nBy Michael J. Barrett\n\nSource code:"
                             bottomPadding: Theme.paddingLarge
 
@@ -392,7 +390,6 @@ Page {
                             width: parent.width
                             id: viewSourceCodeLabel
                             font.pixelSize: Theme.fontSizeExtraSmall
-                            //font.italic: true
                             font.styleName: Theme.primaryColor
                             wrapMode: Text.Wrap
                             text: "Feedback:"
@@ -404,8 +401,6 @@ Page {
                     
                     Row {
 
-                        //width: linkToGitHub.paintedWidth
-                        //x: (parent.width - this.width) * 0.5
                         spacing: 0
                         height: linkToBMAC.height
                         width: emailIconSeparate.width + feedbackEmail.width
@@ -414,7 +409,7 @@ Page {
                         Image {
 
                             id: emailIconSeparate
-                            source: "image://theme/icon-m-mail" //Theme.DarkOnLight ? "GitHub_Logo_And_Mark_120.png" : "GitHub_Logo_And_Mark_White_120.png"
+                            source: "image://theme/icon-m-mail"
                             fillMode: Image.PreserveAspectFit
                             height: parent.height
                             verticalAlignment: Image.AlignVCenter
@@ -438,13 +433,12 @@ Page {
                             topPadding: 0
                             bottomPadding: this.paintedHeight * 0.17 // email is of course lowercase, trying to accomodate this somewhat with this adjustment to keep vertically centered look.
                             leftPadding: Theme.paddingSmall
-                            // rightPadding: Theme.paddingSmall  // some blankspace around mail icon, evening things out a bit
                             verticalAlignment: Text.AlignVCenter
 
                             MouseArea {
 
                                 anchors.fill: parent
-                                onClicked: Qt.openUrlExternally("mailto:mjbarrett@eml.cc?subject='AddBuy feedback'");
+                                onClicked: Qt.openUrlExternally("mailto:mjbarrett@eml.cc?subject=AddBuy Feedback");
 
                             }
 
@@ -465,10 +459,8 @@ Page {
                             width: parent.width
                             id: buyMeCoffeeLabel
                             font.pixelSize: Theme.fontSizeExtraSmall
-                            //font.italic: true
                             font.styleName: Theme.primaryColor
                             wrapMode: Text.Wrap
-                            // text: "If this app is of regular good use, or you'd just like to support the future development of native Sailfish OS apps that utilize public APIs of popular online services, please consider donating using this link. Thanks --MJB"
                             text: "Enjoy the app?"
                             bottomPadding: Theme.paddingLarge
 
