@@ -1,5 +1,4 @@
-# harbour-addbuy
-AddBuy for YNAB
+<h1>AddBuy for YNAB</h1>
 
 A simple transaction-entry app for YNAB accounts that runs on Sailfish OS.
 
@@ -9,7 +8,15 @@ Intended mainly for on-the-spot purchases. For users who generally do most of th
 
 When choosing category, as long as the payee already exists (and was assigned a category), leaving the field as Default will assign the last category used with that payee. If entering a new payee, user will need to select a category to avoid this field being empty when saving.
 
-Still in early development. (Incomplete) to-do list:
+<h3>Rationale:</h3>
+
+- Android version of YNAB is incompatible with Alien Dalvik on Sony Xperia X.
+- Overall positive to have more native SFOS apps.
+- Consistency of Ambience, lack of need for Android support, possibly extending battery life, etc. among reasons for models later than Xperia X.
+
+Still in early development.
+
+<h3>(Incomplete) to-do list:</h3>
 
 - More thorough network error handling.
 - Add cover page feature, possibly working or cleared balance, or remaning balance in a given category.
@@ -19,7 +26,7 @@ Still in early development. (Incomplete) to-do list:
 - May be able to edit New Transaction page so that user doesn't have to restart app if switching to a different budget.
 - Improve icon.
 
-Further down the road:
+<h3>Further down the road:</h3>
 
 - Method to notify user if transaction just saved puts category balance in the red (kind of essential to be associated with the YNAB service).
 - Possible option to select and edit recent transactions (only in landscape as the type would be too small in portrait) and budget amounts.
