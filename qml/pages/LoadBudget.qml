@@ -158,7 +158,7 @@ Page {
                     id: networkErrorLabel
                     width: parent.width
                     height: parent.height
-                    text: "Please quit this app, check network settings, then reopen."
+                    text: "Please quit the app, check network settings, then reopen."
                     font.pixelSize: Theme.fontSizeMedium
                     horizontalAlignment: "AlignHCenter"
                     verticalAlignment: "AlignTop"
@@ -183,7 +183,7 @@ Page {
 
             onTriggered: {
 
-                if (firstRound == false) { // then we're on second round and will display network error
+                if (firstRound == false) {
 
                     statusLabel.text = "Network Timeout";
                     statusLabel.verticalAlignment = "AlignBottom";
@@ -196,9 +196,9 @@ Page {
 
                 }
 
-                else { // first round, will give it another 7 seconds just in case, although (based on testing) 5 should be more than enough (tunnels, etc).
+                else {
 
-                    statusLabel.text = "(Slow Connection...)";
+                    statusLabel.text = "Slow Connection...";
                     console.log("Load attempt is slow.");
                     firstRound = false;
 
@@ -275,8 +275,6 @@ Page {
                     width: parent.width
                     text: "Please choose a default budget and account. These settings can be changed later."
                     font.pixelSize: Theme.fontSizeExtraSmall
-                    //height: text.height + (Theme.paddingLarge * 2)
-                    //y: firstLoadTitleLabel.height
                     wrapMode: Text.WordWrap
                     color: Theme.highlightColor
                     leftPadding: budgetListMenu.leftMargin
@@ -300,7 +298,6 @@ Page {
                     width: parent.width
                     enabled: false
                     label: "Default Budget"
-                    //height: budgetContextMenu.height + (Theme.paddingLarge * 2)
 
                     menu: ContextMenu {
 
@@ -373,7 +370,6 @@ Page {
                     width: parent.width
                     enabled: false
                     label: "Default Account"
-                    //height: accountContextMenu.height + (Theme.paddingLarge * 2)
 
                     menu: ContextMenu {
 
@@ -551,7 +547,7 @@ Page {
             var categoryList = JSON.parse(o.responseText);
 
             var k = 1; // for overall category count - first entry reserved for 'Default (or none)'
-            categoryName[0] = "Default (None if new payee)";
+            categoryName[0] = "Default";
             categoryID[0] = "";
             budgetCategoriesModel.clear();
 
@@ -607,8 +603,7 @@ Page {
 
                                         categoryAmounts[l] = (getFigure[l] / 10).toString();
 
-                                        // place group separators
-                                        if (categoryAmounts[l].length > 3) { // we know number of decimal places so group separator requirement if fixed at 8 (incl. decimal separator)
+                                        if (categoryAmounts[l].length > 3) {
 
                                             categoryAmounts[l] = categoryAmounts[l].slice(0, (categoryAmounts[l].length - 3)) + groupSeparator + categoryAmounts[l].slice((categoryAmounts[l].length - 3), categoryAmounts[l].length);
 
@@ -629,8 +624,7 @@ Page {
                                         categoryAmounts[l] = (getFigure[l] / 10).toString();
                                         categoryAmounts[l] = categoryAmounts[l].slice(0, (categoryAmounts[l].length - decimalPlaces)) + decimalSeparator + categoryAmounts[l].slice((categoryAmounts[l].length - decimalPlaces), categoryAmounts[l].length);
 
-                                        // place group separators
-                                        if (categoryAmounts[l].length > 6) { // we know number of decimal places so group separator requirement if fixed at 7 (incl. decimal separator)
+                                        if (categoryAmounts[l].length > 6) {
 
                                             categoryAmounts[l] = categoryAmounts[l].slice(0, (categoryAmounts[l].length - 6)) + groupSeparator + categoryAmounts[l].slice((categoryAmounts[l].length - 6), categoryAmounts[l].length);
 
@@ -645,7 +639,6 @@ Page {
                                         categoryAmounts[l] = (getFigure[l]).toString();
                                         categoryAmounts[l] = categoryAmounts[l].slice(0, (categoryAmounts[l].length - decimalPlaces)) + decimalSeparator + categoryAmounts[l].slice((categoryAmounts[l].length - decimalPlaces), categoryAmounts[l].length);
 
-                                        // place group separators
                                         if (categoryAmounts[l].length > 7) { // we know number of decimal places so group separator requirement if fixed at 8 (incl. decimal separator)
 
                                             categoryAmounts[l] = categoryAmounts[l].slice(0, (categoryAmounts[l].length - 7)) + groupSeparator + categoryAmounts[l].slice((categoryAmounts[l].length - 7), categoryAmounts[l].length);
@@ -727,53 +720,6 @@ Page {
         });
 
     }
-
-    /*
-    function loadBudgetSettings(url, callback) {
-
-        var budgetSettingsFromServer = new XMLHttpRequest();
-
-        budgetSettingsFromServer.onreadystatechange = (function(myxhr) {
-
-            return function() {
-
-                if (myxhr.readyState === 4) {
-
-                    callback(myxhr);
-
-                    if (budgetSettingsFromServer.status === 200) {
-
-                        console.log("Budget settings gathered successfully.");
-                        statusLabel.text = statusLabel.text + ".";
-
-                    }
-
-                    else {
-
-                        console.log("Error from server: " + budgetSettingsFromServer.status);
-
-                    }
-
-                }
-
-                else {
-
-                    // Current network connection attempt status for budget settings.
-
-                }
-
-            }
-
-        })(budgetSettingsFromServer);
-
-        budgetSettingsFromServer.open('GET', url);
-        budgetSettingsFromServer.setRequestHeader("Content-Type", "application/json");
-        budgetSettingsFromServer.setRequestHeader("Accept", "application/json");
-        budgetSettingsFromServer.setRequestHeader("Authorization", "Bearer " + settings.accessKey);
-        budgetSettingsFromServer.send('');
-
-    }
-    */
 
     function loadPayeeData(url, callback) {
 
