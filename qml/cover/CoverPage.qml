@@ -9,11 +9,11 @@ CoverBackground {
 
         id: titleLabel
         anchors.centerIn: parent
-        text: qsTr("Add\nBuy")
+        text: "AddBuy"
         wrapMode: Text.Wrap
         font.pixelSize: Theme.fontSizeLarge
         horizontalAlignment: Text.AlignHCenter
-        width: parent.width - 2 * Theme.horizontalPageMargin
+        width: parent.width - (2 * Theme.horizontalPageMargin)
 
     }
 
