@@ -22,7 +22,7 @@ Page {
             PageHeader {
 
                 id: mainPageHeader
-                title: "Budget"
+                title: qsTr("Budget")
                 visible: isPortrait ? true : false
 
             }
@@ -77,7 +77,7 @@ Page {
 
                             Label {
 
-                                text: "Category"
+                                text: qsTr("Category")
                                 font.pixelSize: Theme.fontSizeExtraSmall
                                 color: Theme.secondaryColor
                                 topPadding: Theme.paddingSmall
@@ -89,7 +89,7 @@ Page {
 
                             Label {
 
-                                text: "Budgeted"
+                                text: qsTr("Budgeted")
                                 visible: isPortrait ? false : true
                                 font.pixelSize: Theme.fontSizeExtraSmall
                                 color: Theme.secondaryColor
@@ -103,7 +103,7 @@ Page {
 
                             Label {
 
-                                text: "Activity"
+                                text: qsTr("Activity")
                                 visible: isPortrait ? false : true
                                 font.pixelSize: Theme.fontSizeExtraSmall
                                 color: Theme.secondaryColor
@@ -117,7 +117,7 @@ Page {
 
                             Label {
 
-                                text: "Balance"
+                                text: qsTr("Balance")
                                 font.pixelSize: Theme.fontSizeExtraSmall
                                 color: Theme.secondaryColor
                                 topPadding: Theme.paddingSmall
