@@ -128,21 +128,11 @@ Page {
                     id: statusLabel
                     width: parent.width
                     height: parent.height
-                    text: "Loading Budget Data."
+                    text: qsTr("Loading Budget Data.")
                     font.pixelSize: Theme.fontSizeLarge
                     horizontalAlignment: "AlignHCenter"
                     verticalAlignment: "AlignVCenter"
                     color: Theme.highlightColor
-
-                    onTextChanged: {
-
-                        if (statusLabel.text === "Loading Budget Data.....") {
-
-                            statusLabel.text = "Budget Ready";
-
-                        }
-
-                    }
 
                 }
 
@@ -158,7 +148,7 @@ Page {
                     id: networkErrorLabel
                     width: parent.width
                     height: parent.height
-                    text: "Please quit the app, check network settings, then reopen."
+                    text: qsTr("Please quit the app, check network settings, then reopen.")
                     font.pixelSize: Theme.fontSizeMedium
                     horizontalAlignment: "AlignHCenter"
                     verticalAlignment: "AlignTop"
@@ -185,21 +175,19 @@ Page {
 
                 if (firstRound == false) {
 
-                    statusLabel.text = "Network Timeout";
+                    statusLabel.text = qsTr("Network Timeout");
                     statusLabel.verticalAlignment = "AlignBottom";
                     appTitleLabel.color = "gray";
                     appVersionLabel.color = "gray";
                     statusLabel.color = "red";
                     networkErrorLabel.visible = true;
-                    console.log("Load attempt unsuccessful.");
                     this.stop();
 
                 }
 
                 else {
 
-                    statusLabel.text = "Slow Connection...";
-                    console.log("Load attempt is slow.");
+                    statusLabel.text = qsTr("Slow Connection...");
                     firstRound = false;
 
                 }
@@ -273,7 +261,7 @@ Page {
 
                     id: pleaseAuthLabel
                     width: parent.width
-                    text: "Please choose a default budget and account. These settings can be changed later."
+                    text: qsTr("Please choose a default budget and account. These settings can be changed later.")
                     font.pixelSize: Theme.fontSizeExtraSmall
                     wrapMode: Text.WordWrap
                     color: Theme.highlightColor
@@ -297,7 +285,7 @@ Page {
                     id: budgetListMenu
                     width: parent.width
                     enabled: false
-                    label: "Default Budget"
+                    label: qsTr("Default Budget")
 
                     menu: ContextMenu {
 
@@ -369,7 +357,7 @@ Page {
                     id: accountListMenu
                     width: parent.width
                     enabled: false
-                    label: "Default Account"
+                    label: qsTr("Default Account")
 
                     menu: ContextMenu {
 
@@ -411,7 +399,7 @@ Page {
                 Button {
 
                     id: continueButton
-                    text: "Continue"
+                    text: qsTr("Continue")
                     enabled: false
                     y: Theme.paddingMedium * 2
 
@@ -735,7 +723,7 @@ Page {
 
                     if (payeeListFromServer.status === 200) {
 
-                        console.log("Payees gathered successfully.");
+                        // Payees gathered successfully.
                         statusLabel.text = statusLabel.text + ".";
                         loadingProgress = loadingProgress + 1;
 
@@ -743,7 +731,7 @@ Page {
 
                     else {
 
-                        console.log("Repsonse from server: " + payeeListFromServer.status);
+                        // Error from server.
 
                     }
 
@@ -781,7 +769,7 @@ Page {
 
                     if (categoryListFromServer.status === 200) {
 
-                        console.log("Categories gathered successfully.");
+                        // Categories gathered successfully.
                         loadingProgress = loadingProgress + 1;
                         statusLabel.text = statusLabel.text + ".";
 
@@ -789,7 +777,7 @@ Page {
 
                     else {
 
-                        console.log("Repsonse from server: " + categoryListFromServer.status);
+                        // Error from server.
 
                     }
 
@@ -827,7 +815,7 @@ Page {
 
                     if (accountListFromServer.status === 200) {
 
-                        console.log("Accounts gathered successfully.");
+                        // Accounts gathered successfully.
                         loadingProgress = loadingProgress + 1;
                         statusLabel.text = statusLabel.text + ".";
 
@@ -835,7 +823,7 @@ Page {
 
                     else {
 
-                        console.log("Repsonse from server: " + accountListFromServer.status);
+                        // Error from server.
 
                     }
 
@@ -875,7 +863,7 @@ Page {
 
                     if (budgetListFromServer.status === 200) {
 
-                        console.log("Budgets gathered successfully.");
+                        // Budgets gathered successfully.
                         loadingProgress = loadingProgress + 1;
                         statusLabel.text = statusLabel.text + ".";
 
@@ -883,7 +871,7 @@ Page {
 
                     else {
 
-                        console.log("Repsonse from server: " + budgetListFromServer.status);
+                        // Error from server.
 
                     }
 
