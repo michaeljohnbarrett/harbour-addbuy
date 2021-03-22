@@ -25,13 +25,13 @@ Page {
 
             SectionHeader {
 
-                text: "Budgets & Accounts"
+                text: qsTr("Budgets & Accounts")
 
             }
 
             ComboBox {
 
-                label: "Default Budget"
+                label: qsTr("Default Budget")
                 width: parent.width
                 currentIndex: settings.defaultBudgetIndex
 
@@ -106,14 +106,14 @@ Page {
                 width: parent.width
                 topPadding: 0
                 leftPadding: recentsOldToNewSwitch.leftMargin
-                text: "Please select a default account, then quit and reopen app to complete switch."
+                text: qsTr("Please select a default account, then quit and reopen app to complete switch.")
                 font.pixelSize: Theme.fontSizeExtraSmall
 
             }
 
             ComboBox {
 
-                label: "Default Account"
+                label: qsTr("Default Account")
                 width: parent.width
                 currentIndex: settings.defaultAccountIndex
                 id: accountCombo
@@ -148,20 +148,21 @@ Page {
 
             SectionHeader {
 
-                text: "Recent Transactions"
+                text: qsTr("Recent Transactions")
 
             }
 
             ComboBox {
 
-                label: "Show"
+                label: qsTr("Show")
                 width: parent.width
+                currentIndex: settings.recentDaysBack
 
                 menu: ContextMenu {
 
                     MenuItem {
 
-                        text: "Last week"
+                        text: qsTr("Last week")
 
                         onClicked: {
 
@@ -174,7 +175,7 @@ Page {
 
                     MenuItem {
 
-                        text: "Last 2 weeks"
+                        text: qsTr("Last 2 weeks")
 
                         onClicked: {
 
@@ -187,7 +188,7 @@ Page {
 
                     MenuItem {
 
-                        text: "Last 30 days"
+                        text: qsTr("Last 30 days")
 
                         onClicked: {
 
@@ -200,7 +201,7 @@ Page {
 
                     MenuItem {
 
-                        text: "Last 90 days"
+                        text: qsTr("Last 90 days")
 
                         onClicked: {
 
@@ -213,7 +214,7 @@ Page {
 
                     MenuItem {
 
-                        text: "All transactions"
+                        text: qsTr("All transactions")
 
                         onClicked: {
 
@@ -230,7 +231,7 @@ Page {
 
             TextSwitch {
 
-                text: "Sort old to new"
+                text: qsTr("Sort old to new")
                 id: recentsOldToNewSwitch
                 checked: settings.recentsOldToNew
 
@@ -245,7 +246,7 @@ Page {
 
             TextSwitch {
 
-                text: "Display working & cleared account balances"
+                text: qsTr("Display working & cleared account balances")
                 id: recentsBalanceSwitch
                 checked: settings.recentsShowBalances
 
@@ -260,16 +261,7 @@ Page {
 
             SectionHeader {
 
-                text: "General"
-
-            }
-
-            Label {
-
-                leftPadding: recentsOldToNewSwitch.leftMargin
-                text: "About"
-                width: parent.width
-                bottomPadding: Theme.paddingMedium
+                text: qsTr("About")
 
             }
 
@@ -280,8 +272,8 @@ Page {
 
                 Column {
 
-                    spacing: 0
                     width: parent.width
+                    spacing: 0
 
                     Row {
 
@@ -291,7 +283,7 @@ Page {
 
                         Label {
 
-                            text: "AddBuy for YNAB"
+                            text: qsTr("AddBuy for YNAB")
                             width: text.width
                             height: text.height
                             horizontalAlignment: Qt.AlignHCenter
@@ -299,7 +291,7 @@ Page {
                             font.pixelSize: Theme.fontSizeLarge
                             font.bold: true
                             color: Theme.highlightColor
-                            bottomPadding: Theme.paddingSmall
+                            bottomPadding: Theme.paddingMedium
 
                         }
 
@@ -307,13 +299,14 @@ Page {
 
                     Separator {
 
+                        id: titleSeparator
                         width: appTitleLabel.width
                         x: (page.width - this.width) * 0.5
                         horizontalAlignment: Separator.Center
                         color: Theme.primaryColor
 
                     }
-
+/*
                     Row {
 
                         width: versionLabel.width
@@ -329,11 +322,11 @@ Page {
                         }
 
                     }
-
+*/
                     Row {
 
-                        width: parent.width * 0.7
-                        x: parent.width * 0.15
+                        width: parent.width * 0.64
+                        x: parent.width * 0.18
                         height: aboutTextLabel.height
                         spacing: 0
 
@@ -343,62 +336,48 @@ Page {
                             width: parent.width
                             id: aboutTextLabel
                             font.pixelSize: Theme.fontSizeExtraSmall
+                            //font.italic: true
                             font.styleName: Theme.primaryColor
                             wrapMode: Text.Wrap
-                            text: "A simple transaction-entry app for YNAB users on Sailfish OS.\n\nBy Michael J. Barrett\n\nSource code:"
+                            text: qsTr("A simple transaction-entry app for YNAB on Sailfish OS.\n\nBy Michael J. Barrett\n\nVersion 0.1\nLicensed under GNU GPLv3")
                             bottomPadding: Theme.paddingLarge
 
                         }
 
                     }
 
-                    Row {
+                    Separator {
 
-                        width: linkToGitHub.paintedWidth
-                        x: (parent.width - this.width) * 0.5
-                        spacing: 0
-                        height: linkToBMAC.height
-
-                        Image {
-
-                            id: linkToGitHub
-                            source: Theme.primaryColor == "#000000" ? "GitHub_Logo_And_Mark_120.png" : "GitHub_Logo_And_Mark_White_120.png"
-                            fillMode: Image.PreserveAspectFit
-                            height: parent.height
-
-                            MouseArea {
-
-                                    anchors.fill: parent
-                                    onClicked: Qt.openUrlExternally("https://github.com/michaeljohnbarrett/harbour-addbuy");
-
-                            }
-
-                        }
+                        width: titleSeparator.width
+                        x: (page.width - this.width) * 0.5
+                        horizontalAlignment: Separator.Center
+                        color: Theme.primaryColor
 
                     }
 
                     Row {
 
-                        width: parent.width * 0.7
-                        x: parent.width * 0.15
-                        height: viewSourceCodeLabel.height
+                        width: sendFeedbackLabel.paintedWidth
+                        x: (parent.width - this.width) * 0.5
+                        height: sendFeedbackLabel.height
                         spacing: 0
 
                         Label {
 
                             topPadding: Theme.paddingLarge
                             width: parent.width
-                            id: viewSourceCodeLabel
+                            id: sendFeedbackLabel
                             font.pixelSize: Theme.fontSizeExtraSmall
+                            //font.italic: true
                             font.styleName: Theme.primaryColor
                             wrapMode: Text.Wrap
-                            text: "Feedback:"
-                            bottomPadding: Theme.paddingLarge
+                            text: qsTr("Send feedback")
+                            bottomPadding: Theme.paddingMedium
 
                         }
 
                     }
-                    
+
                     Row {
 
                         spacing: 0
@@ -431,7 +410,7 @@ Page {
                             color: Theme.highlightColor
                             text: "mjbarrett@eml.cc"
                             topPadding: 0
-                            bottomPadding: this.paintedHeight * 0.17 // email is of course lowercase, trying to accomodate this somewhat with this adjustment to keep vertically centered look.
+                            bottomPadding: this.paintedHeight * 0.17 // making this adjustment to keep vertically centered look with lowercase email.
                             leftPadding: Theme.paddingSmall
                             verticalAlignment: Text.AlignVCenter
 
@@ -446,23 +425,71 @@ Page {
 
                     }
 
+
+
                     Row {
 
-                        width: parent.width * 0.7
-                        x: parent.width * 0.15
-                        height: buyMeCoffeeLabel.height
+                        width: viewSourceCodeLabel.paintedWidth
+                        x: (parent.width - this.width) * 0.5
+                        height: viewSourceCodeLabel.height
                         spacing: 0
 
                         Label {
 
                             topPadding: Theme.paddingLarge
                             width: parent.width
+                            id: viewSourceCodeLabel
+                            font.pixelSize: Theme.fontSizeExtraSmall
+                            font.styleName: Theme.primaryColor
+                            wrapMode: Text.Wrap
+                            text: qsTr("View source code")
+                            bottomPadding: Theme.paddingMedium
+
+                        }
+
+                    }
+                    
+                    Row {
+
+                        width: linkToGitHub.paintedWidth
+                        x: (parent.width - this.width) * 0.5
+                        spacing: 0
+                        height: linkToBMAC.height
+
+                        Image {
+
+                            id: linkToGitHub
+                            source: Theme.primaryColor === "#000000" ? "GitHub_Logo.png" : "GitHub_Logo_White.png"
+                            fillMode: Image.PreserveAspectFit
+                            height: parent.height
+
+                            MouseArea {
+
+                                anchors.fill: parent
+                                onClicked: Qt.openUrlExternally("https://github.com/michaeljohnbarrett/harbour-addbuy");
+
+                            }
+
+                        }
+
+                    }
+
+                    Row {
+
+                        width: buyMeCoffeeLabel.paintedWidth
+                        x: (parent.width - this.width) * 0.5
+                        height: buyMeCoffeeLabel.height
+                        spacing: 0
+
+                        Label {
+
+                            topPadding: Theme.paddingLarge
                             id: buyMeCoffeeLabel
                             font.pixelSize: Theme.fontSizeExtraSmall
                             font.styleName: Theme.primaryColor
                             wrapMode: Text.Wrap
-                            text: "Enjoy the app?"
-                            bottomPadding: Theme.paddingLarge
+                            text: qsTr("Support my work")
+                            bottomPadding: Theme.paddingMedium
 
                         }
 
@@ -478,7 +505,7 @@ Page {
                         Image {
 
                             id: linkToBMAC
-                            source: Theme.primaryColor == "#000000" ? "BMClogowithwordmark-black.png" : "BMClogowithwordmark-white.png"
+                            source: Theme.primaryColor === "#000000" ? "BMClogowithwordmark-black.png" : "BMClogowithwordmark-white.png"
                             fillMode: Image.PreserveAspectFit
                             width: parent.width
 
@@ -496,7 +523,7 @@ Page {
                     Row {
 
                         id: bmacGapRow
-                        height: Theme.paddingMedium * 3
+                        height: Theme.paddingMedium + Theme.paddingLarge + Theme.paddingSmall
                         width: parent.width
 
                     }
@@ -532,13 +559,13 @@ Page {
 
                     if (accountListFromServer.status === 200) {
 
-                        console.log("Accounts gathered successfully.");
+                        // Accounts gathered successfully.
 
                     }
 
                     else {
 
-                        console.log("Repsonse from server: " + accountListFromServer.status);
+                        // Error from server.
 
                     }
 
