@@ -1,6 +1,6 @@
 <h1>AddBuy for YNAB</h1>
 
-A simple transaction-entry app for YNAB accounts that runs on Sailfish OS.
+A simple transaction-entry app for YNAB on Sailfish OS.
 
 Privacy Policy: https://www.websitepolicies.com/policies/view/W6aKgySZ
 
@@ -8,13 +8,13 @@ Intended mainly for on-the-spot purchases. For users who generally do most of th
 
 When choosing category, as long as the payee already exists (and was assigned a category), leaving the field as Default will assign the last category used with that payee. If entering a new payee, user will need to select a category to avoid this field being empty when saving.
 
+Still in early development.
+
 <h3>Rationale:</h3>
 
 - Android version of YNAB is incompatible with Alien Dalvik on Sony Xperia X.
 - Overall positive to have more native SFOS apps.
 - Consistency of Ambience, lack of need for Android support, possibly extending battery life, etc. among reasons for models later than Xperia X.
-
-Still in early development.
 
 <h3>(Incomplete) to-do list:</h3>
 
