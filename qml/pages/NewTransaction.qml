@@ -7,7 +7,6 @@ Page {
 
     id: page
     allowedOrientations: Orientation.PortraitMask
-
     property string chosenPayee
     property bool notOperator
 
@@ -20,26 +19,31 @@ Page {
 
     }
 
-    onStatusChanged: {
-
-        if (status === PageStatus.Active) {console.log("Need to add function to refresh currency symbol, accounts etc. for new budget if back from Settings.");}
-
-    }
-
     NetworkPostAccess {
 
         id: httpPostInCPP
 
         onFinished: {
 
-            console.log("responseCode: " + responseCode + ". Need to add code to handle network and/or authentication errors with more specificity.");
-
             if (responseCode === 201) {
 
                 var responseParsed = JSON.parse(responseText);
-                assignedCategory = responseParsed.data.transaction.category_name;
-                savingBusy.running = false;
-                transactionSaved.publish();
+
+                if (responseParsed.data.transaction.category_name !== null) {
+
+                    assignedCategory = responseParsed.data.transaction.category_name;
+                    transactionSaved.previewSummary = "Transaction Saved"
+                    savingBusy.running = false;
+                    transactionSaved.publish();
+                }
+
+                else {
+
+                    transactionSaved.previewSummary = "Invalid Category - Other Details Saved";
+                    savingBusy.running = false;
+                    transactionSaved.publish();
+
+                }
 
             }
 
@@ -126,7 +130,7 @@ Page {
                     if (decimalPlaces !== 3) amountSendReady = amountSendReady * 10;
                     chosenPayee = chosenPayee.replace(":", "\\:"); // avoiding errors when saving
                     var saveTransactionUrl = "https://api.youneedabudget.com/v1/budgets/" + settings.defaultBudget + "/transactions";
-                    var data = "{\"transaction\": {\"" + accountSendReady + "\",\"date\": \"" + todaysDate.toISOString().substring(0, 10) + "\",\"amount\":-" + amountSendReady + ",\"" + payeeSendReady + "\"," + memoSendReady + clearedStatus + "\"approved\": true}}"
+                    var data = "{\"transaction\": {\"" + accountSendReady + "\",\"date\": \"" + todaysDate.toISOString().substring(0, 10) + "\",\"amount\":-" + amountSendReady + ",\"" + categorySendReady + "\",\"" + payeeSendReady + "\"," + memoSendReady + clearedStatus + "\"approved\": true}}"
                     httpPostInCPP.post(saveTransactionUrl, data, "Bearer " + settings.accessKey);
 
                 }
@@ -191,9 +195,9 @@ Page {
                         id: costFigure
                         inputMethodHints: Qt.ImhFormattedNumbersOnly
                         width: shadowAmount.paintedWidth + (Theme.paddingLarge * 2)
-                        color: errorHighlight? "gray" : Theme.primaryColor
-                        textLeftMargin: Theme.paddingMedium
-                        textRightMargin: Theme.paddingMedium
+                        color: Theme.primaryColor
+                        textLeftMargin: Theme.paddingMedium + (Theme.paddingSmall * 0.5)
+                        textRightMargin: Theme.paddingMedium - (Theme.paddingSmall * 0.5)
                         textTopMargin: Theme.paddingMedium
                         horizontalAlignment: TextInput.AlignHCenter
                         font.pixelSize: Theme.fontSizeHuge
@@ -492,14 +496,6 @@ Page {
 
                             }
 
-                            Component.onCompleted: {
-
-                                // update();
-                                // payeeSearchListView.currentIndex = -1;
-                                // payeeSearchListView.headerItem.focus = true;
-
-                            }
-
                         }
 
                         delegate: ListItem {
@@ -681,8 +677,6 @@ Page {
 
                     EnterKey.onClicked: {
 
-                        // user will be aware that enter key in middle of memo unsupported
-                        // as icon will be arrow down to close keyboard.
                         text = text.substring(0, (text.length - 1));
                         this.focus = false;
 
