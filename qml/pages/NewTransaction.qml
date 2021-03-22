@@ -35,7 +35,7 @@ Page {
                     transactionSaved.previewSummary = "Transaction Saved"
                     savingBusy.running = false;
                     transactionSaved.publish();
-                    
+
                 }
 
                 else {
@@ -91,7 +91,7 @@ Page {
                     if (decimalPlaces !== 3) amountSendReady = amountSendReady * 10;
                     chosenPayee = chosenPayee.replace(":", "\\:"); // avoiding errors when saving
                     var saveTransactionUrl = "https://api.youneedabudget.com/v1/budgets/" + settings.defaultBudget + "/transactions";
-                    var data = "{\"transaction\": {\"" + accountSendReady + "\",\"date\": \"" + todaysDate.toISOString().substring(0, 10) + "\",\"amount\":-" + amountSendReady + ",\"" + categorySendReady + "\",\"" + payeeSendReady + "\"," + memoSendReady + clearedStatus + "\"approved\": true}}"
+                    var data = "{\"transaction\": {\"" + accountSendReady + "\",\"date\": \"" + todaysDate.toISOString().substring(0, 10) + "\",\"amount\":-" + amountSendReady + "," + categorySendReady + payeeSendReady + memoSendReady + clearedStatus + "\"approved\": true}}"
                     httpPostInCPP.post(saveTransactionUrl, data, "Bearer " + settings.accessKey);
 
                 }
@@ -379,7 +379,7 @@ Page {
                 TextField {
 
                     id: searchField
-                    width: parent.width                    
+                    width: parent.width
                     placeholderText: qsTr("Payee")
                     font.pixelSize: Theme.fontSizeMedium
                     background: null
@@ -408,7 +408,7 @@ Page {
 
                             chosenPayee = searchField.text;
                             chosenPayee = chosenPayee.replace(":", "\\:"); // avoiding errors when saving
-                            payeeSendReady = "payee_name\": \"" + chosenPayee;
+                            payeeSendReady = "\"payee_name\": \"" + chosenPayee + "\",";
                             currencyRow.opacity = 1.0;
                             categoryBox.visible = true;
                             accountBox.visible = true;
@@ -561,7 +561,8 @@ Page {
 
                                 onClicked: {
 
-                                    categorySendReady = "category_id\": \"" + categoryID[index];
+                                    if (index === 0) categorySendReady = "";
+                                    else categorySendReady = "\"category_id\": \"" + categoryID[index] + "\",";
 
                                 }
 
@@ -759,7 +760,7 @@ Page {
         if (memoSwitch.checked) memoText.visible = true;
         searchField.text = chosenPayee; // need to put this line after components made visible again.
         chosenPayee = chosenPayee.replace(":", "\\:"); // avoiding errors when saving
-        payeeSendReady = "payee_name\": \"" + chosenPayee;
+        payeeSendReady = "\"payee_name\": \"" + chosenPayee + "\",";
         payeeListModel.clear();
         searchField.focus = false;
 
