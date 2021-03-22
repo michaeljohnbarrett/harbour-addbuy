@@ -21,7 +21,6 @@ Page {
     Component.onCompleted: {
 
         chosenRecentsAccount = settings.defaultAccountIndex;
-
         var todaysDate = new Date();
         var cutOffDate = new Date();
 
@@ -401,6 +400,195 @@ Page {
 
                                         });
 
+                                        balancesRow.visible = false;
+
+                                        if (settings.recentsShowBalances) {
+
+                                            loadAccountBalances('https://api.youneedabudget.com/v1/budgets/' + settings.defaultBudget + '/accounts/' + accountID[chosenRecentsAccount], function (o) {
+
+                                                var accountBalances = JSON.parse(o.responseText);
+                                                var workingBalanceFigure = accountBalances.data.account.balance;
+                                                var clearedBalanceFigure = accountBalances.data.account.cleared_balance;
+                                                var putBackMinusSign = false;
+
+                                                if (workingBalanceFigure === 0) {
+
+                                                    switch (decimalPlaces) {
+
+                                                    case 0:
+                                                        workingBalance = currencySymbol[0] + "0" + currencySymbol[1];
+                                                        break;
+                                                    case 2:
+                                                        workingBalance = currencySymbol[0] + "0.00" + currencySymbol[1];
+                                                        break;
+                                                    case 3:
+                                                        workingBalance = currencySymbol[0] + "0.000" + currencySymbol[1];
+
+                                                    }
+
+                                                }
+
+                                                else {
+
+                                                    if (workingBalanceFigure < 0) {
+
+                                                        putBackMinusSign = true;
+                                                        workingBalanceFigure = workingBalanceFigure * -1;
+
+                                                    }
+
+                                                    switch (decimalPlaces) {
+
+                                                        case 0:
+
+                                                            workingBalance = (workingBalanceFigure / 10).toString();
+
+                                                            // place group separators
+                                                            if (workingBalance.length > 3) {
+
+                                                                workingBalance = workingBalance.slice(0, (workingBalance.length - 3)) + groupSeparator + workingBalance.slice((workingBalance.length - 3), workingBalance.length);
+
+                                                                if (workingBalance.length > 7) {
+
+                                                                    workingBalance = workingBalance.slice(0, (workingBalance.length - 7)) + groupSeparator + workingBalance.slice((workingBalance.length - 7), workingBalance.length);
+
+                                                                    if (workingBalance.length > 11) workingBalance = workingBalance.slice(0, (workingBalance.length - 11)) + groupSeparator + workingBalance.slice((workingBalance.length - 11), workingBalance.length);
+
+                                                                }
+
+                                                            }
+
+                                                        break;
+
+                                                        case 2:
+
+                                                            workingBalance = (workingBalanceFigure / 10).toString();
+                                                            workingBalance = workingBalance.slice(0, (workingBalance.length - decimalPlaces)) + decimalSeparator + workingBalance.slice((workingBalance.length - decimalPlaces), workingBalance.length);
+
+                                                            // place group separators
+                                                            if (workingBalance.length > 6) {
+
+                                                                workingBalance = workingBalance.slice(0, (workingBalance.length - 6)) + groupSeparator + workingBalance.slice((workingBalance.length - 6), workingBalance.length);
+
+                                                                if (workingBalance.length > 10) workingBalance = workingBalance.slice(0, (workingBalance.length - 10)) + groupSeparator + workingBalance.slice((workingBalance.length - 10), workingBalance.length);
+
+                                                            }
+
+                                                        break;
+
+                                                        case 3:
+
+                                                            workingBalance = (workingBalanceFigure).toString();
+                                                            workingBalance = workingBalance.slice(0, (workingBalance.length - decimalPlaces)) + decimalSeparator + workingBalance.slice((workingBalance.length - decimalPlaces), workingBalance.length);
+
+                                                            // place group separators
+                                                            if (workingBalance.length > 7) {
+
+                                                                workingBalance = workingBalance.slice(0, (workingBalance.length - 7)) + groupSeparator + workingBalance.slice((workingBalance.length - 7), workingBalance.length);
+
+                                                                if (workingBalance.length > 11) workingBalance = workingBalance.slice(0, (workingBalance.length - 11)) + groupSeparator + workingBalance.slice((workingBalance.length - 11), workingBalance.length);
+
+                                                            }
+
+                                                    }
+
+                                                    if (putBackMinusSign) workingBalance = "-" + currencySymbol[0] + workingBalance + currencySymbol[1];
+                                                    else workingBalance = currencySymbol[0] + workingBalance + currencySymbol[1];
+                                                    putBackMinusSign = false;
+
+                                                }
+
+                                                if (clearedBalanceFigure === 0) {
+
+                                                    switch (decimalPlaces) {
+
+                                                    case 0:
+                                                        clearedBalance = currencySymbol[0] + "0" + currencySymbol[1];
+                                                        break;
+                                                    case 2:
+                                                        clearedBalance = currencySymbol[0] + "0.00" + currencySymbol[1];
+                                                        break;
+                                                    case 3:
+                                                        clearedBalance = currencySymbol[0] + "0.000" + currencySymbol[1];
+
+                                                    }
+
+                                                }
+
+                                                else {
+
+                                                    if (clearedBalanceFigure < 0) {
+
+                                                        putBackMinusSign = true;
+                                                        clearedBalanceFigure = clearedBalanceFigure * -1;
+
+                                                    }
+
+                                                    switch (decimalPlaces) {
+
+                                                        case 0:
+
+                                                            clearedBalance = (clearedBalanceFigure / 10).toString();
+
+                                                            // place group separators
+                                                            if (clearedBalance.length > 3) {
+
+                                                                clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 3)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 3), clearedBalance.length);
+
+                                                                if (clearedBalance.length > 7) {
+
+                                                                    clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 7)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 7), clearedBalance.length);
+
+                                                                    if (clearedBalance.length > 11) clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 11)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 11), clearedBalance.length);
+
+                                                                }
+
+                                                            }
+
+                                                        break;
+
+                                                        case 2:
+
+                                                            clearedBalance = (clearedBalanceFigure / 10).toString();
+                                                            clearedBalance = clearedBalance.slice(0, (clearedBalance.length - decimalPlaces)) + decimalSeparator + clearedBalance.slice((clearedBalance.length - decimalPlaces), clearedBalance.length);
+
+                                                            // place group separators
+                                                            if (clearedBalance.length > 6) {
+
+                                                                clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 6)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 6), clearedBalance.length);
+
+                                                                if (clearedBalance.length > 10) clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 10)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 10), clearedBalance.length);
+
+                                                            }
+
+                                                        break;
+
+                                                        case 3:
+
+                                                            clearedBalance = (clearedBalanceFigure).toString();
+                                                            clearedBalance = clearedBalance.slice(0, (clearedBalance.length - decimalPlaces)) + decimalSeparator + clearedBalance.slice((clearedBalance.length - decimalPlaces), clearedBalance.length);
+
+                                                            // place group separators
+                                                            if (clearedBalance.length > 7) {
+
+                                                                clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 7)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 7), clearedBalance.length);
+
+                                                                if (clearedBalance.length > 11) clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 11)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 11), clearedBalance.length);
+
+                                                            }
+
+                                                    }
+
+                                                    if (putBackMinusSign) clearedBalance = "-" + currencySymbol[0] + clearedBalance + currencySymbol[1];
+                                                    else clearedBalance = currencySymbol[0] + clearedBalance + currencySymbol[1];
+
+                                                }
+
+                                            });
+
+                                        }
+
+                                        if (settings.recentsShowBalances && page.isPortrait) balancesRow.visible = true; // (hopefully) force redraw of balances
                                         recentsListView.forceLayout();
 
                                     }
