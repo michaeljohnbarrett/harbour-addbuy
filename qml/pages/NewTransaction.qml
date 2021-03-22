@@ -35,6 +35,7 @@ Page {
                     transactionSaved.previewSummary = "Transaction Saved"
                     savingBusy.running = false;
                     transactionSaved.publish();
+                    
                 }
 
                 else {
@@ -74,46 +75,6 @@ Page {
 
             MenuItem {
 
-                text: "Settings"
-
-                onClicked: {
-
-                    pageStack.push(Qt.resolvedUrl("Settings.qml"));
-
-                }
-
-            }
-
-            MenuItem {
-
-                text: "Budget Categories"
-
-                onClicked: {
-
-                    pageStack.push(Qt.resolvedUrl("Categories.qml"));
-
-                }
-
-            }
-
-            MenuItem {
-
-                text: "Recent Transactions"
-
-                onClicked: {
-
-                    pageStack.push(Qt.resolvedUrl("Recent.qml"));
-
-                }
-
-            }
-
-        }
-
-        PushUpMenu {
-
-            MenuItem {
-
                 text: qsTr("Save Transaction")
 
                 onClicked: {
@@ -132,6 +93,46 @@ Page {
                     var saveTransactionUrl = "https://api.youneedabudget.com/v1/budgets/" + settings.defaultBudget + "/transactions";
                     var data = "{\"transaction\": {\"" + accountSendReady + "\",\"date\": \"" + todaysDate.toISOString().substring(0, 10) + "\",\"amount\":-" + amountSendReady + ",\"" + categorySendReady + "\",\"" + payeeSendReady + "\"," + memoSendReady + clearedStatus + "\"approved\": true}}"
                     httpPostInCPP.post(saveTransactionUrl, data, "Bearer " + settings.accessKey);
+
+                }
+
+            }
+
+        }
+
+        PushUpMenu {
+
+            MenuItem {
+
+                text: qsTr("Recent Transactions")
+
+                onClicked: {
+
+                    pageStack.push(Qt.resolvedUrl("Recent.qml"));
+
+                }
+
+            }
+
+            MenuItem {
+
+                text: qsTr("Budget Categories")
+
+                onClicked: {
+
+                    pageStack.push(Qt.resolvedUrl("Categories.qml"));
+
+                }
+
+            }
+
+            MenuItem {
+
+                text: qsTr("Settings")
+
+                onClicked: {
+
+                    pageStack.push(Qt.resolvedUrl("Settings.qml"));
 
                 }
 
@@ -379,7 +380,7 @@ Page {
 
                     id: searchField
                     width: parent.width                    
-                    placeholderText: "Payee"
+                    placeholderText: qsTr("Payee")
                     font.pixelSize: Theme.fontSizeMedium
                     background: null
                     labelVisible: false
@@ -544,7 +545,7 @@ Page {
                 ComboBox {
 
                     id: categoryBox
-                    label: "Category"
+                    label: qsTr("Category")
 
                     menu: ContextMenu {
 
@@ -582,7 +583,7 @@ Page {
                 ComboBox {
 
                     id: accountBox
-                    label: "Account"
+                    label: qsTr("Account")
                     currentIndex: chosenAccount
 
                     menu: ContextMenu {
@@ -622,7 +623,7 @@ Page {
                 TextSwitch {
 
                     id: clearedSwitch
-                    text: "Cleared"
+                    text: qsTr("Cleared")
 
                 }
 
@@ -636,7 +637,7 @@ Page {
                 TextSwitch {
 
                     id: memoSwitch
-                    text: "Memo"
+                    text: qsTr("Memo")
 
                     onCheckedChanged: {
 
@@ -709,7 +710,7 @@ Page {
         Notification {
 
             id: transactionSaved
-            previewSummary: "Transaction saved"
+            previewSummary: qsTr("Transaction Saved")
             appName: "AddBuy"
             isTransient: true
             urgency: Notification.Low
@@ -720,52 +721,10 @@ Page {
         Notification {
 
             id: transactionNotSaved
-            previewSummary: "Transaction not saved - Authentication or formatting error"
+            previewSummary: qsTr("Transaction Not Saved - Authentication or formatting error")
             appName: "AddBuy"
             isTransient: false
             expireTimeout: 2500
-
-        }
-
-        Notification {
-
-            id: connectionStatus
-            previewSummary: "Connecting to YNAB server"
-            appName: "AddBuy"
-            isTransient: true
-            expireTimeout: 1500
-
-        }
-
-        Timer {
-
-            id: timeoutCheck
-            running: false
-            interval: 5000 // giving the save transaction function 5 seconds for 'slow network' warning, another 5 for error.
-            repeat: true
-
-            onTriggered: {
-
-                if (timeoutFirstRound) {
-
-                    // first round of 5 seconds
-                    transactionNotSaved.previewSummary = "Possible network issue - Awaiting server response..."
-                    transactionNotSaved.publish();
-                    timeoutFirstRound = false;
-
-                }
-
-                else {
-
-                    // 2nd round
-                    transactionNotSaved.previewSummary = "Transaction not saved - Network error"
-                    transactionNotSaved.publish();
-                    timeoutFirstRound = true; // reset incase of another network error later
-                    this.stop();
-
-                }
-
-            }
 
         }
 
