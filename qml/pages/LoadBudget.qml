@@ -546,7 +546,7 @@ Page {
 
             var categoryList = JSON.parse(o.responseText);
 
-            var k = 1; // for overall category count - first entry reserved for 'Default (or none)'
+            var k = 1; // for overall category count - first entry reserved for 'Default'
             categoryName[0] = "Default";
             categoryID[0] = "";
             budgetCategoriesModel.clear();
@@ -669,8 +669,8 @@ Page {
 
             }
 
-            // incase user never interacts with category choosing menu prior to saving:
-            categorySendReady = "category_id\": \"" + categoryID[0];
+            // incase user never interacts with category choosing menu prior to saving, it'll be blank:
+            categorySendReady = "category_id\": \"";
 
         });
 
