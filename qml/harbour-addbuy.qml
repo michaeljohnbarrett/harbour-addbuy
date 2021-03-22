@@ -125,13 +125,14 @@ ApplicationWindow {
 
                     if (budgetSettingsFromServer.status === 200) {
 
+                        // Budget settings loaded successfully.
                         loadingProgress = loadingProgress + 1;
 
                     }
 
                     else {
 
-                        console.log("Error from server: " + budgetSettingsFromServer.status);
+                        // Error from server.
 
                     }
 
