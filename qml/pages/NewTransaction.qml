@@ -40,7 +40,7 @@ Page {
 
                 else {
 
-                    transactionSaved.previewSummary = "Invalid Category - Other Details Saved";
+                    transactionSaved.previewSummary = "Invalid Category, Remaining Data Saved";
                     savingBusy.running = false;
                     transactionSaved.publish();
 
