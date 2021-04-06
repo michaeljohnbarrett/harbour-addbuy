@@ -107,6 +107,7 @@ Page {
                 topPadding: 0
                 leftPadding: recentsOldToNewSwitch.leftMargin
                 text: qsTr("Please select a default account, then quit and reopen app to complete switch.")
+                wrapMode: Text.Wrap
                 font.pixelSize: Theme.fontSizeExtraSmall
 
             }
@@ -339,7 +340,7 @@ Page {
                             //font.italic: true
                             font.styleName: Theme.primaryColor
                             wrapMode: Text.Wrap
-                            text: qsTr("A simple transaction-entry app for YNAB on Sailfish OS.\n\nBy Michael J. Barrett\n\nVersion 0.1\nLicensed under GNU GPLv3")
+                            text: qsTr("A simple transaction-entry app for YNAB on Sailfish OS.\n\nBy Michael J. Barrett\n\nVersion 0.1\nLicensed under GNU GPLv3\n\nAddBuy for YNAB is an unofficial application and is in no way associated with You Need A Budget.")
                             bottomPadding: Theme.paddingLarge
 
                         }
@@ -563,19 +564,19 @@ Page {
 
                     }
 
-                    else {
+                    // else {
 
                         // Error from server.
 
-                    }
+                    // }
 
                 }
 
-                else {
+                // else {
 
                     // Current network connection attempt status for accounts.
 
-                }
+                // }
 
             }
 
