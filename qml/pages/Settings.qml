@@ -372,7 +372,7 @@ Page {
                             //font.italic: true
                             font.styleName: Theme.primaryColor
                             wrapMode: Text.Wrap
-                            text: qsTr("Send feedback")
+                            text: qsTr("Send feedback to")
                             bottomPadding: Theme.paddingMedium
 
                         }
@@ -443,7 +443,7 @@ Page {
                             font.pixelSize: Theme.fontSizeExtraSmall
                             font.styleName: Theme.primaryColor
                             wrapMode: Text.Wrap
-                            text: qsTr("View source code")
+                            text: qsTr("View source code at")
                             bottomPadding: Theme.paddingMedium
 
                         }
@@ -489,7 +489,7 @@ Page {
                             font.pixelSize: Theme.fontSizeExtraSmall
                             font.styleName: Theme.primaryColor
                             wrapMode: Text.Wrap
-                            text: qsTr("Support my work")
+                            text: qsTr("Support my work &")
                             bottomPadding: Theme.paddingMedium
 
                         }
