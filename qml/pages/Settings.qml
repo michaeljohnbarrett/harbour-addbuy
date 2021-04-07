@@ -460,7 +460,7 @@ Page {
                         Image {
 
                             id: linkToGitHub
-                            source: Theme.primaryColor === "#000000" ? "GitHub_Logo.png" : "GitHub_Logo_White.png"
+                            source: Theme.primaryColor == "#000000" ? "GitHub_Logo.png" : "GitHub_Logo_White.png"
                             fillMode: Image.PreserveAspectFit
                             height: parent.height
 
@@ -506,7 +506,7 @@ Page {
                         Image {
 
                             id: linkToBMAC
-                            source: Theme.primaryColor === "#000000" ? "BMClogowithwordmark-black.png" : "BMClogowithwordmark-white.png"
+                            source: Theme.primaryColor == "#000000" ? "BMClogowithwordmark-black.png" : "BMClogowithwordmark-white.png"
                             fillMode: Image.PreserveAspectFit
                             width: parent.width
 
