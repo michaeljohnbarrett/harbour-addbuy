@@ -20,7 +20,10 @@ Page {
 
     Component.onCompleted: {
 
-        chosenRecentsAccount = settings.defaultAccountIndex;
+        if (settings.recentsShowSelectedAcc) chosenRecentsAccount = chosenAccount;
+        else chosenRecentsAccount = settings.defaultAccountIndex;
+        recentAccountBox.currentIndex = chosenRecentsAccount;
+
         var todaysDate = new Date();
         var cutOffDate = new Date();
 
@@ -47,7 +50,7 @@ Page {
 
         }
 
-        var l = settings.defaultAccountIndex;
+        var l = chosenRecentsAccount;
 
         loadRecentTransactions('https://api.youneedabudget.com/v1/budgets/' + settings.defaultBudget + '/accounts/' + accountID[l] + '/transactions' + sinceDate, function (o) {
 
@@ -58,11 +61,11 @@ Page {
             var recentTransactionList = JSON.parse(o.responseText);
             recentTransactionsModel.clear(); // clear the existing one line
 
-            var j = recentTransactionList.data.transactions.length; // need to flip order of recent transactions so that most recent is on top...
+            var j = recentTransactionList.data.transactions.length;
 
             for (var i = 0; i < recentTransactionList.data.transactions.length; i++) {
 
-                j--; // ..using j.
+                j--;
 
                 recentsDate[j] = Qt.formatDate(recentTransactionList.data.transactions[i].date, dateFormat);
 
@@ -326,7 +329,6 @@ Page {
 
                     label: "Account"
                     id: recentAccountBox
-                    currentIndex: settings.defaultAccountIndex
 
                     menu: ContextMenu {
 
