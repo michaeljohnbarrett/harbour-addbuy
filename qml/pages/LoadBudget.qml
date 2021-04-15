@@ -18,7 +18,7 @@ Page {
             statusLabel.verticalAlignment = "AlignBottom";
             appTitleLabel.color = "gray";
             appVersionLabel.color = "gray";
-            statusLabel.color = "red";
+            statusLabel.color = Theme.errorColor;
             networkErrorLabel.font.pixelSize = Theme.fontSizeSmall;
             networkErrorLabel.text = "This is a developer-only release that requires the addition of the user's PAK to the 'accessKey' property on 'harbour-addbuy.qml'";
             networkErrorLabel.visible = true;
@@ -179,7 +179,7 @@ Page {
                     statusLabel.verticalAlignment = "AlignBottom";
                     appTitleLabel.color = "gray";
                     appVersionLabel.color = "gray";
-                    statusLabel.color = "red";
+                    statusLabel.color = Theme.errorColor;
                     networkErrorLabel.visible = true;
                     this.stop();
 
@@ -658,7 +658,7 @@ Page {
             }
 
             // incase user never interacts with category choosing menu prior to saving, it'll be blank:
-            categorySendReady = "category_id\": \"";
+            categorySendReady = "";
 
         });
 
