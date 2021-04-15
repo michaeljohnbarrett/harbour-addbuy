@@ -247,6 +247,21 @@ Page {
 
             TextSwitch {
 
+                text: qsTr("Load currently selected account on main page instead of default")
+                id: defaultVsSelectedAccSwitch
+                checked: settings.recentsShowSelectedAcc
+
+                onCheckedChanged: {
+
+                    settings.recentsShowSelectedAcc = checked;
+                    settings.sync();
+
+                }
+
+            }
+
+            TextSwitch {
+
                 text: qsTr("Display working & cleared account balances")
                 id: recentsBalanceSwitch
                 checked: settings.recentsShowBalances
@@ -307,23 +322,7 @@ Page {
                         color: Theme.primaryColor
 
                     }
-/*
-                    Row {
 
-                        width: versionLabel.width
-                        x: (parent.width - this.width) * 0.5
-                        spacing: 0
-
-                        Label {
-
-                            id: versionLabel
-                            text: "v0.1"
-                            font.pixelSize: Theme.fontSizeExtraSmall
-
-                        }
-
-                    }
-*/
                     Row {
 
                         width: parent.width * 0.64
@@ -337,7 +336,6 @@ Page {
                             width: parent.width
                             id: aboutTextLabel
                             font.pixelSize: Theme.fontSizeExtraSmall
-                            //font.italic: true
                             font.styleName: Theme.primaryColor
                             wrapMode: Text.Wrap
                             text: qsTr("A simple transaction-entry app for YNAB on Sailfish OS.\n\nBy Michael J. Barrett\n\nVersion 0.1\nLicensed under GNU GPLv3\n\nAddBuy for YNAB is an unofficial application and is in no way associated with You Need A Budget.")
@@ -369,10 +367,10 @@ Page {
                             width: parent.width
                             id: sendFeedbackLabel
                             font.pixelSize: Theme.fontSizeExtraSmall
-                            //font.italic: true
+                            font.italic: true
                             font.styleName: Theme.primaryColor
                             wrapMode: Text.Wrap
-                            text: qsTr("Send feedback to")
+                            text: qsTr("Send feedback")
                             bottomPadding: Theme.paddingMedium
 
                         }
@@ -442,8 +440,9 @@ Page {
                             id: viewSourceCodeLabel
                             font.pixelSize: Theme.fontSizeExtraSmall
                             font.styleName: Theme.primaryColor
+                            font.italic: true
                             wrapMode: Text.Wrap
-                            text: qsTr("View source code at")
+                            text: qsTr("View source code")
                             bottomPadding: Theme.paddingMedium
 
                         }
@@ -460,7 +459,7 @@ Page {
                         Image {
 
                             id: linkToGitHub
-                            source: Theme.primaryColor == "#000000" ? "GitHub_Logo.png" : "GitHub_Logo_White.png"
+                            source: Theme.colorScheme == Theme.DarkOnLight ? "GitHub_Logo.png" : "GitHub_Logo_White.png"
                             fillMode: Image.PreserveAspectFit
                             height: parent.height
 
@@ -488,8 +487,9 @@ Page {
                             id: buyMeCoffeeLabel
                             font.pixelSize: Theme.fontSizeExtraSmall
                             font.styleName: Theme.primaryColor
+                            font.italic: true
                             wrapMode: Text.Wrap
-                            text: qsTr("Support my work &")
+                            text: qsTr("Support my work")
                             bottomPadding: Theme.paddingMedium
 
                         }
@@ -506,14 +506,14 @@ Page {
                         Image {
 
                             id: linkToBMAC
-                            source: Theme.primaryColor == "#000000" ? "BMClogowithwordmark-black.png" : "BMClogowithwordmark-white.png"
+                            source: Theme.colorScheme == Theme.DarkOnLight ? "BMClogowithwordmark-black.png" : "BMClogowithwordmark-white.png"
                             fillMode: Image.PreserveAspectFit
                             width: parent.width
 
                             MouseArea {
 
-                                    anchors.fill: parent
-                                    onClicked: Qt.openUrlExternally("https://buymeacoff.ee/michaeljb");
+                                anchors.fill: parent
+                                onClicked: Qt.openUrlExternally("https://buymeacoff.ee/michaeljb");
 
                             }
 
