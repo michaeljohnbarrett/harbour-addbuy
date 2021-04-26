@@ -405,6 +405,7 @@ Page {
 
                     onClicked: {
 
+                        loadingProgress = 0;
                         pageStack.replace(Qt.resolvedUrl("LoadBudget.qml"));
 
                     }
