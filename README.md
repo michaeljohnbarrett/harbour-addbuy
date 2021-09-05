@@ -24,7 +24,6 @@ Still in early development.
 - Under the hood, will probably migrate existing XHttpRequest code (all connections other than saving transaction POST) to the C++ class for consistency and performance. C++ class was created due to blank page issue with POST request using XHttpRequest method.
 - Cleanup and/or tighten code when formatting main figure box on New Transaction page and in other areas.
 - May be able to edit New Transaction page so that user doesn't have to restart app if switching to a different budget.
-- Improve icon.
 
 <h3>Further down the road:</h3>
 
