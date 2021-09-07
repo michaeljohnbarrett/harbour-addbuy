@@ -1,6 +1,8 @@
 import QtQuick 2.2
 import Sailfish.Silica 1.0
 import Nemo.Configuration 1.0
+import Nemo.Notifications 1.0
+import NetworkPostAccess 1.0
 
 Page {
 
@@ -10,57 +12,14 @@ Page {
 
     Component.onCompleted: {
 
-        if (settings.accessKey === "AccessKeyHere") {
+        if (settings.accessKey === "") {
 
-            otherElements.visible = false;
-            regularBudgetLoading.visible = true;
-            statusLabel.text = "No Access";
-            statusLabel.verticalAlignment = "AlignBottom";
-            appTitleLabel.color = "gray";
-            appVersionLabel.color = "gray";
-            statusLabel.color = Theme.errorColor;
-            networkErrorLabel.font.pixelSize = Theme.fontSizeSmall;
-            networkErrorLabel.text = "This is a developer-only release that requires the addition of the user's PAK to the 'accessKey' property on 'harbour-addbuy.qml'";
-            networkErrorLabel.visible = true;
+            authorizeUser.visible = true;
+            authorizeUser.url = "https://app.youneedabudget.com/oauth/authorize?client_id=ec095b5d959f770038b415f6511e91b6c3362513ba25b6b94956b2d6d6b9849a&redirect_uri=https://mjbdev.net/addbuy/oauthSuccess.html&response_type=token";
 
         }
 
-        else {
-
-            if (settings.defaultBudget === "notYetSetup") {
-
-                otherElements.visible = true;
-                loadingDataBusy.running = true;
-
-                loadBudgetList('https://api.youneedabudget.com/v1/budgets', function (o) {
-
-                    var budgetList = JSON.parse(o.responseText);
-
-                    budgetsModel.clear();
-
-                    for (var i = 0; i < budgetList.data.budgets.length; i++) {
-
-                        budgetName[i] = budgetList.data.budgets[i].name;
-                        budgetID[i] = budgetList.data.budgets[i].id;
-
-                        budgetsModel.append({"title": budgetName[i], "uuid": budgetID[i]});
-
-                    }
-
-                    loadingDataBusy.running = false;
-                    budgetListMenu.enabled = true;
-
-                });
-
-            }
-
-            else {
-
-                loadData();
-
-            }
-
-        }
+        else loadData();
 
     }
 
@@ -105,7 +64,7 @@ Page {
                 Label {
 
                     id: appVersionLabel
-                    text: "v0.1"
+                    text: "v0.2"
                     font.pixelSize: Theme.fontSizeMedium
                     color: Theme.secondaryColor
                     width: parent.width
@@ -166,7 +125,7 @@ Page {
 
         Timer {
 
-            id: requestTimoutTimer
+            id: requestTimeoutTimer
             running: false
             interval: 7000
             repeat: true
@@ -198,14 +157,13 @@ Page {
 
     }
 
-    // Possible use of OAuth will need this added.
-    /*
     SilicaWebView {
 
         id: authorizeUser
-        height: page.height * 0.6
+        height: otherElements.visible ? page.height * 0.55 : page.height
         width: page.width
         visible: false
+        //_cookiesEnabled: settings.forceForgetSignIn ? false : true  <-- could not get web page to load with this property set either way.
 
         anchors {
 
@@ -215,24 +173,81 @@ Page {
 
         }
 
+        header: PageHeader {
+
+            id: webViewHeader
+            title: qsTr("Authorize AddBuy")
+
+        }
+
         onUrlChanged: {
 
-            // Redirect user following successful authentication etc.
+            var urlString = url.toString();
+
+            if (urlString.indexOf("https://mjbdev.net/addbuy/oauthSuccess.html") === 0) {
+
+                var accessToken = urlString.slice((urlString.indexOf("access_token=") + 13), (urlString.indexOf("access_token=") + 77));
+
+                loadingDataBusy.running = true;
+                settings.accessKey = accessToken;
+                settings.sync();
+
+                loadBudgetList('https://api.youneedabudget.com/v1/budgets', function (o) {
+
+                    var budgetList = JSON.parse(o.responseText);
+                    var defaultBudgetMatched = false;
+                    budgetsModel.clear();
+
+                    for (var i = 0; i < budgetList.data.budgets.length; i++) {
+
+                        budgetName[i] = budgetList.data.budgets[i].name;
+                        budgetID[i] = budgetList.data.budgets[i].id;
+                        budgetsModel.append({"title": budgetName[i], "uuid": budgetID[i]});
+
+                        if (budgetID[i] === settings.defaultBudget) {
+
+                            defaultBudgetMatched = true;
+                            settings.defaultBudgetIndex = i;
+                            settings.sync();
+
+                        }
+
+                    }
+
+                    if (defaultBudgetMatched) {
+
+                        loadingProgress = 0;
+                        authorizeUser.visible = false;
+                        otherElements.visible = false;
+                        regularBudgetLoading.visible = true;
+                        finishLoadingData();
+
+                    }
+
+                    else {
+
+                        loadingDataBusy.running = false;
+                        chooseDefaultsRow.visible = true;
+                        budgetListMenu.enabled = true;
+
+                    }
+
+                });
+
+            }
 
         }
 
     }
-    */
 
     SilicaListView {
 
         visible: false
         id: otherElements
         spacing: 0
-        height: page.height // * 0.4  -- will possibly re-enable if webview is needed.
+        height: page.height * 0.35
         width: page.width
 
-        /* --  for use if webview/oauth are in use.
         anchors {
 
             top: authorizeUser.bottom
@@ -240,99 +255,124 @@ Page {
             right: parent.right
 
         }
-        */
-
-        anchors.fill: parent
 
         Column {
 
             height: parent.height
             width: parent.width
-            id: otherElementsColumn
 
             Row {
 
                 width: parent.width
-                spacing: Theme.paddingLarge
+                id: chooseDefaultsRow
+                visible: false
 
-                // need to place app title above this for better page layout as oauth window not present.
+                Column {
 
-                Label {
-
-                    id: pleaseAuthLabel
                     width: parent.width
-                    text: qsTr("Please choose a default budget and account. These settings can be changed later.")
-                    font.pixelSize: Theme.fontSizeExtraSmall
-                    wrapMode: Text.WordWrap
-                    color: Theme.highlightColor
-                    leftPadding: budgetListMenu.leftMargin
-                    rightPadding: budgetListMenu.leftMargin
-                    topPadding: Theme.paddingMedium
-                    bottomPadding: Theme.paddingMedium
-                    verticalAlignment: "AlignVCenter"
+                    id: chooseDefaultsColumn
 
-                }
+                    Row {
 
-            }
+                        width: parent.width
+                        spacing: Theme.paddingLarge
 
-            Row {
+                        Label {
 
-                width: parent.width
-                spacing: Theme.paddingSmall
+                            id: pleaseAuthLabel
+                            width: parent.width
+                            text: qsTr("Please choose a default budget and account. These settings can be changed later.")
+                            font.pixelSize: Theme.fontSizeExtraSmall
+                            wrapMode: Text.WordWrap
+                            color: Theme.highlightColor
+                            leftPadding: budgetListMenu.leftMargin
+                            rightPadding: budgetListMenu.leftMargin
+                            topPadding: Theme.paddingMedium
+                            bottomPadding: Theme.paddingMedium
+                            verticalAlignment: "AlignVCenter"
+                            enabled: false
 
-                ComboBox {
+                        }
 
-                    id: budgetListMenu
-                    width: parent.width
-                    enabled: false
-                    label: qsTr("Default Budget")
+                    }
 
-                    menu: ContextMenu {
+                    Row {
 
-                        id: budgetContextMenu
+                        width: parent.width
+                        spacing: Theme.paddingSmall
 
-                        Repeater {
+                        ComboBox {
 
-                            model: budgetsModel
+                            id: budgetListMenu
+                            width: parent.width
+                            enabled: false
+                            label: qsTr("Default Budget")
 
-                            MenuItem {
+                            menu: ContextMenu {
 
-                                text: title
+                                id: budgetContextMenu
 
-                                onClicked: {
+                                Repeater {
 
-                                    settings.defaultBudget = uuid;
-                                    settings.defaultBudgetIndex = index;
-                                    settings.sync();
+                                    model: budgetsModel
 
-                                    loadingDataBusy.running = true;
-                                    loadAccountData('https://api.youneedabudget.com/v1/budgets/' + settings.defaultBudget + '/accounts', function (o) {
+                                    MenuItem {
 
-                                        var accountList = JSON.parse(o.responseText);
-                                        var j = 0;
+                                        text: title
 
-                                        accountsModel.clear();
+                                        onClicked: {
 
-                                        for (var i = 0; i < accountList.data.accounts.length; i++) {
+                                            settings.defaultBudget = uuid;
+                                            settings.defaultBudgetIndex = index;
+                                            settings.sync();
+                                            loadingDataBusy.running = true;
+                                            loadAccountData('https://api.youneedabudget.com/v1/budgets/' + settings.defaultBudget + '/accounts', function (o) {
 
-                                            if (accountList.data.accounts[i].closed === false) {
+                                                var accountList = JSON.parse(o.responseText);
 
-                                                accountName[j] = accountList.data.accounts[i].name;
-                                                accountID[j] = accountList.data.accounts[i].id;
+                                                if (o.status === 200) {
 
-                                                accountsModel.append({"title": accountName[j], "uuid": accountID[j]});
+                                                    var j = 0;
 
-                                                j = j + 1;
+                                                    accountsModel.clear();
 
-                                            }
+                                                    for (var i = 0; i < accountList.data.accounts.length; i++) {
+
+                                                        if (accountList.data.accounts[i].closed === false) {
+
+                                                            accountName[j] = accountList.data.accounts[i].name;
+                                                            accountID[j] = accountList.data.accounts[i].id;
+                                                            accountsModel.append({"title": accountName[j], "uuid": accountID[j]});
+                                                            j = j + 1;
+
+                                                        }
+
+                                                    }
+
+                                                    accountListMenu.enabled = true;
+                                                    requestTimeoutTimer.stop();
+                                                    loadingDataBusy.running = false;
+
+                                                }
+
+                                                else if (o.status === 401 || o.status === 403) {
+
+                                                    needNewKey(); // unlikely but could've waited two hours?
+
+                                                }
+
+                                                else {
+
+                                                    loadBudgetNotification.previewSummary = "Error gathering accounts."
+                                                    loadBudgetNotification.publish();
+
+                                                }
+
+                                            });
 
                                         }
 
-                                        accountListMenu.enabled = true;
-                                        requestTimoutTimer.stop();
-                                        loadingDataBusy.running = false;
-
-                                    });
+                                    }
 
                                 }
 
@@ -342,42 +382,42 @@ Page {
 
                     }
 
-                }
+                    Row {
 
-            }
+                        id: accountListRow
+                        width: parent.width
+                        spacing: Theme.paddingSmall
 
-            Row {
+                        ComboBox {
 
-                id: accountListRow
-                width: parent.width
-                spacing: Theme.paddingSmall
+                            id: accountListMenu
+                            width: parent.width
+                            enabled: false
+                            label: qsTr("Default Account")
 
-                ComboBox {
+                            menu: ContextMenu {
 
-                    id: accountListMenu
-                    width: parent.width
-                    enabled: false
-                    label: qsTr("Default Account")
+                                id: accountContextMenu
 
-                    menu: ContextMenu {
+                                Repeater {
 
-                        id: accountContextMenu
+                                    model: accountsModel
 
-                        Repeater {
+                                    MenuItem {
 
-                            model: accountsModel
+                                        text: title
 
-                            MenuItem {
+                                        onClicked: {
 
-                                text: title
+                                            settings.defaultAccount = uuid;
+                                            settings.defaultAccountIndex = index;
+                                            settings.setupComplete = true
+                                            settings.sync();
+                                            continueButton.enabled = true;
 
-                                onClicked: {
+                                        }
 
-                                    settings.defaultAccount = uuid;
-                                    settings.defaultAccountIndex = index;
-                                    settings.sync();
-
-                                    continueButton.enabled = true;
+                                    }
 
                                 }
 
@@ -387,26 +427,26 @@ Page {
 
                     }
 
-                }
+                    Row {
 
-            }
+                        width: continueButton.width
+                        x: (parent.width - continueButton.width) * 0.5
 
-            Row {
+                        Button {
 
-                width: continueButton.width
-                x: (parent.width - continueButton.width) * 0.5
+                            id: continueButton
+                            text: qsTr("Continue")
+                            enabled: false
+                            y: Theme.paddingMedium * 2
 
-                Button {
+                            onClicked: {
 
-                    id: continueButton
-                    text: qsTr("Continue")
-                    enabled: false
-                    y: Theme.paddingMedium * 2
+                                loadingProgress = 0;
+                                pageStack.replace(Qt.resolvedUrl("LoadBudget.qml"));
 
-                    onClicked: {
+                            }
 
-                        loadingProgress = 0;
-                        pageStack.replace(Qt.resolvedUrl("LoadBudget.qml"));
+                        }
 
                     }
 
@@ -425,92 +465,166 @@ Page {
 
         }
 
+        Notification {
+
+            id: loadBudgetNotification
+            isTransient: true
+            expireTimeout: 1500
+            appName: "AddBuy"
+
+        }
+
     }
 
     function loadData() {
 
-        // no need for oauth etc., hiding incase of coming back from first setup
-        // authorizeUser.visible = false;
         otherElements.visible = false;
-        // need regular data loading page.
         regularBudgetLoading.visible = true;
 
-        loadBudgetList('https://api.youneedabudget.com/v1/budgets', function (o) {
+        loadBudgetList('https://api.youneedabudget.com/v1/budgets', function width(o) {
 
-            var budgetList = JSON.parse(o.responseText);
-            var defaultBudgetAssigned = false;
+            if (o.status === 200) {
 
-            for (var i = 0; i < budgetList.data.budgets.length; i++) {
+                var budgetList = JSON.parse(o.responseText);
+                var defaultBudgetMatched = false;
 
-                budgetName[i] = budgetList.data.budgets[i].name;
-                budgetID[i] = budgetList.data.budgets[i].id;
+                for (var i = 0; i < budgetList.data.budgets.length; i++) {
 
-                // Determine default budget in list to get correct index.
-                if (budgetID[i] === settings.defaultBudget) {
+                    budgetName[i] = budgetList.data.budgets[i].name;
+                    budgetID[i] = budgetList.data.budgets[i].id;
 
-                    defaultBudgetAssigned = true;
-                    settings.defaultBudgetIndex = i;
+                    // Determine default budget in list to get correct index.
+                    if (budgetID[i] === settings.defaultBudget) {
+
+                        defaultBudgetMatched = true;
+                        settings.defaultBudgetIndex = i;
+                        settings.sync();
+
+                    }
 
                 }
 
+                // If still no default, for whatever reason (budget deleted since), first in list will be assigned default status.
+                if (defaultBudgetMatched === false) {
+
+                    settings.defaultBudgetIndex = 0;
+                    settings.defaultBudget = budgetID[0];
+                    settings.sync();
+
+                }
+
+                finishLoadingData();
+
             }
 
-            // If still no default, for whatever reason, first in list will be assigned default status.
-            if (defaultBudgetAssigned === false) settings.defaultBudgetIndex = 0;
+            else if (o.status === 401 || o.status === 403) {
 
+                requestTimeoutTimer.stop();
+                needNewKey();
+
+            }
+/*
+            else if (o.status === 503) {
+
+                // need to add improved way to account for maintenance periods etc.
+                requestTimeoutTimer.stop();
+                needNewKey();
+
+            }
+*/
+            else {
+
+                requestTimeoutTimer.stop();
+                needNewKey();
+
+            }
 
         });
+
+    }
+
+    function finishLoadingData() {
 
         loadBudgetSettings('https://api.youneedabudget.com/v1/budgets/' + settings.defaultBudget + '/settings', function (o) {
 
             var budgetSettingsList = JSON.parse(o.responseText);
-            dateFormat = budgetSettingsList.data.settings.date_format.format;
-            currencySymbol[4] = budgetSettingsList.data.settings.currency_format.currency_symbol;
-            symbolFirst = budgetSettingsList.data.settings.currency_format.symbol_first;
-            if (isRTL(currencySymbol[4])) symbolFirst = !symbolFirst;
-            decimalPlaces = budgetSettingsList.data.settings.currency_format.decimal_digits;
-            decimalSeparator = budgetSettingsList.data.settings.currency_format.decimal_separator;
-            groupSeparator = budgetSettingsList.data.settings.currency_format.group_separator;
 
-            if (symbolFirst) {
+            if (o.status === 200) {
 
-                currencySymbol[2] = currencySymbol[4];
-                currencySymbol[3] = "";
+                dateFormat = budgetSettingsList.data.settings.date_format.format;
+                currencySymbol[4] = budgetSettingsList.data.settings.currency_format.currency_symbol;
+                symbolFirst = budgetSettingsList.data.settings.currency_format.symbol_first;
+                if (isRTL(currencySymbol[4])) symbolFirst = !symbolFirst;
+                decimalPlaces = budgetSettingsList.data.settings.currency_format.decimal_digits;
+                decimalSeparator = budgetSettingsList.data.settings.currency_format.decimal_separator;
+                groupSeparator = budgetSettingsList.data.settings.currency_format.group_separator;
 
-                if (budgetSettingsList.data.settings.currency_format.display_symbol === true) {
+                if (symbolFirst) {
 
-                    currencySymbol[0] = currencySymbol[4];
-                    currencySymbol[1] = "";
+                    currencySymbol[2] = currencySymbol[4];
+                    currencySymbol[3] = "";
+
+                    if (budgetSettingsList.data.settings.currency_format.display_symbol === true) {
+
+                        currencySymbol[0] = currencySymbol[4];
+                        currencySymbol[1] = "";
+
+                    }
+
+                    else {
+
+                        currencySymbol[0] = "";
+                        currencySymbol[1] = "";
+
+                    }
 
                 }
 
                 else {
 
-                    currencySymbol[0] = "";
-                    currencySymbol[1] = "";
+                    currencySymbol[2] = "";
+                    currencySymbol[3] = currencySymbol[4];
+
+                    if (budgetSettingsList.data.settings.currency_format.display_symbol === true) {
+
+                        currencySymbol[0] = "";
+                        currencySymbol[1] = currencySymbol[4];
+
+                    }
+
+                    else {
+
+                        currencySymbol[0] = "";
+                        currencySymbol[1] = "";
+
+                    }
 
                 }
+
+                loadingProgress = loadingProgress + 1;
+                statusLabel.text = statusLabel.text + ".";
 
             }
 
+            else if (o.status === 401 || o.status === 403) {
+
+                requestTimeoutTimer.stop();
+                needNewKey();
+
+            }
+/*
+            else if (o.status === 503) {
+
+                // account for maintenance periods etc. redirect to login for now where notice should show on page?
+                requestTimeoutTimer.stop();
+                needNewKey();
+
+            }
+*/
             else {
 
-                currencySymbol[2] = "";
-                currencySymbol[3] = currencySymbol[4];
-
-                if (budgetSettingsList.data.settings.currency_format.display_symbol === true) {
-
-                    currencySymbol[0] = "";
-                    currencySymbol[1] = currencySymbol[4];
-
-                }
-
-                else {
-
-                    currencySymbol[0] = "";
-                    currencySymbol[1] = "";
-
-                }
+                requestTimeoutTimer.stop();
+                needNewKey();
 
             }
 
@@ -520,191 +634,201 @@ Page {
 
             var payeeList = JSON.parse(o.responseText);
 
-            for (var i = 0; i < payeeList.data.payees.length; i++) {
+            if (o.status === 200) {
 
-                payeeName[i] = payeeList.data.payees[i].name;
-                // trying out a parallel string array of each value in uppercase to see if this can achieve case-insensitive search
-                payeeNameToUpperCase[i] = payeeName[i].toUpperCase();
-                payeeID[i] = payeeList.data.payees[i].id;
+                for (var i = 0; i < payeeList.data.payees.length; i++) {
 
-            }
-
-        });
-
-        loadCategoryData('https://api.youneedabudget.com/v1/budgets/' + settings.defaultBudget + '/categories', function (o) {
-
-            var categoryList = JSON.parse(o.responseText);
-
-            var k = 1; // for overall category count - first entry reserved for 'Default'
-            categoryName[0] = "Default";
-            categoryID[0] = "";
-            budgetCategoriesModel.clear();
-
-            for (var i = 1; i < categoryList.data.category_groups.length; i++) { // '1' instead of '0' because we skip first category group (internal)
-
-                if (categoryList.data.category_groups[i].hidden === false && categoryList.data.category_groups[i].name !== "Hidden Categories") {
-
-                    budgetCategoriesModel.append({ "groupName": categoryList.data.category_groups[i].name, "groupNameVis": true, "catNamesVis": false, "categories": {"name": "", "uuid": "", "budgeted": "", "activity": "", "balance": ""} });
-
-                    for (var j = 0; j < categoryList.data.category_groups[i].categories.length; j++) {
-
-                        if (categoryList.data.category_groups[i].categories[j].hidden === false) {
-
-                            var getFigure = [0];
-                            var categoryAmounts = ["string"];
-                            getFigure[0] = categoryList.data.category_groups[i].categories[j].budgeted;
-                            getFigure[1] = categoryList.data.category_groups[i].categories[j].activity;
-                            getFigure[2] = categoryList.data.category_groups[i].categories[j].balance;
-
-                            for (var l = 0; l < 3; l++) {
-
-                                var putBackMinusSign = false;
-
-                                if (getFigure[l] === 0) {
-
-                                    switch (decimalPlaces) {
-
-                                    case 0:
-                                        categoryAmounts[l] = currencySymbol[0] + "0" + currencySymbol[1];
-                                        break;
-                                    case 2:
-                                        categoryAmounts[l] = currencySymbol[0] + "0.00" + currencySymbol[1];
-                                        break;
-                                    case 3:
-                                        categoryAmounts[l] = currencySymbol[0] + "0.000" + currencySymbol[1];
-
-                                    }
-
-                                }
-
-                                else {
-
-                                    if (getFigure[l] < 0) {
-
-                                        putBackMinusSign = true;
-                                        getFigure[l] = getFigure[l] * -1;
-
-                                    }
-
-                                    switch (decimalPlaces) {
-
-                                    case 0:
-
-                                        categoryAmounts[l] = (getFigure[l] / 10).toString();
-
-                                        if (categoryAmounts[l].length > 3) {
-
-                                            categoryAmounts[l] = categoryAmounts[l].slice(0, (categoryAmounts[l].length - 3)) + groupSeparator + categoryAmounts[l].slice((categoryAmounts[l].length - 3), categoryAmounts[l].length);
-
-                                            if (categoryAmounts[l].length > 7) {
-
-                                                categoryAmounts[l] = categoryAmounts[l].slice(0, (categoryAmounts[l].length - 7)) + groupSeparator + categoryAmounts[l].slice((categoryAmounts[l].length - 7), categoryAmounts[l].length);
-
-                                                if (categoryAmounts[l].length > 11) categoryAmounts[l] = categoryAmounts[l].slice(0, (categoryAmounts[l].length - 11)) + groupSeparator + categoryAmounts[l].slice((categoryAmounts[l].length - 11), categoryAmounts[l].length);
-
-                                            }
-
-                                        }
-
-                                        break;
-
-                                    case 2:
-
-                                        categoryAmounts[l] = (getFigure[l] / 10).toString();
-                                        categoryAmounts[l] = categoryAmounts[l].slice(0, (categoryAmounts[l].length - decimalPlaces)) + decimalSeparator + categoryAmounts[l].slice((categoryAmounts[l].length - decimalPlaces), categoryAmounts[l].length);
-
-                                        if (categoryAmounts[l].length > 6) {
-
-                                            categoryAmounts[l] = categoryAmounts[l].slice(0, (categoryAmounts[l].length - 6)) + groupSeparator + categoryAmounts[l].slice((categoryAmounts[l].length - 6), categoryAmounts[l].length);
-
-                                            if (categoryAmounts[l].length > 10) categoryAmounts[l] = categoryAmounts[l].slice(0, (categoryAmounts[l].length - 10)) + groupSeparator + categoryAmounts[l].slice((categoryAmounts[l].length - 10), categoryAmounts[l].length);
-
-                                        }
-
-                                        break;
-
-                                    case 3:
-
-                                        categoryAmounts[l] = (getFigure[l]).toString();
-                                        categoryAmounts[l] = categoryAmounts[l].slice(0, (categoryAmounts[l].length - decimalPlaces)) + decimalSeparator + categoryAmounts[l].slice((categoryAmounts[l].length - decimalPlaces), categoryAmounts[l].length);
-
-                                        if (categoryAmounts[l].length > 7) { // we know number of decimal places so group separator requirement if fixed at 8 (incl. decimal separator)
-
-                                            categoryAmounts[l] = categoryAmounts[l].slice(0, (categoryAmounts[l].length - 7)) + groupSeparator + categoryAmounts[l].slice((categoryAmounts[l].length - 7), categoryAmounts[l].length);
-
-                                            if (categoryAmounts[l].length > 11) categoryAmounts[l] = categoryAmounts[l].slice(0, (categoryAmounts[l].length - 11)) + groupSeparator + categoryAmounts[l].slice((categoryAmounts[l].length - 11), categoryAmounts[l].length);
-
-                                        }
-
-                                    }
-
-                                    if (putBackMinusSign) categoryAmounts[l] = "-" + currencySymbol[0] + categoryAmounts[l] + currencySymbol[1];
-                                    else categoryAmounts[l] = currencySymbol[0] + categoryAmounts[l] + currencySymbol[1];
-
-                                }
-
-                            }
-
-                            categoryName[k] = categoryList.data.category_groups[i].categories[j].name;
-                            categoryID[k] = categoryList.data.category_groups[i].categories[j].id;
-                            budgetCategoriesModel.append({ "groupName": "", "groupNameVis": false, "catNamesVis": true, "categories": { "name": categoryList.data.category_groups[i].categories[j].name, "uuid": categoryList.data.category_groups[i].categories[j].id, "budgeted": categoryAmounts[0], "activity": categoryAmounts[1], "balance": categoryAmounts[2] }});
-                            k++;
-
-                        }
-
-                    }
+                    payeeName[i] = payeeList.data.payees[i].name;
+                    payeeNameToUpperCase[i] = payeeName[i].toUpperCase();
+                    payeeID[i] = payeeList.data.payees[i].id;
 
                 }
 
+                statusLabel.text = statusLabel.text + ".";
+                loadingProgress = loadingProgress + 1;
+
             }
 
-            // incase user never interacts with category choosing menu prior to saving, it'll be blank:
-            categorySendReady = "";
+            else if (o.status === 401 || o.status === 403) {
+
+                requestTimeoutTimer.stop();
+                needNewKey();
+
+            }
+/*
+            else if (o.status === 503) {
+
+                // account for maintenance periods
+                requestTimeoutTimer.stop();
+                needNewKey();
+
+            }
+*/
+            else {
+
+                requestTimeoutTimer.stop();
+                needNewKey();
+
+            }
 
         });
 
         loadAccountData('https://api.youneedabudget.com/v1/budgets/' + settings.defaultBudget + '/accounts', function (o) {
 
             var accountList = JSON.parse(o.responseText);
-            var k = settings.defaultAccount;
-            var j = 0;
-            var defaultAccountAssigned = false;
-            accountsModel.clear();
 
-            for (var i = 0; i < accountList.data.accounts.length; i++) {
+            if (o.status === 200) {
 
-                if (accountList.data.accounts[i].closed === false) {
+                var k = settings.defaultAccount;
+                var j = 0;
+                var l = 0;
+                var defaultAccountAssigned = false;
+                accountsModel.clear();
+                coverBalComboModel.clear();
 
-                    accountName[j] = accountList.data.accounts[i].name;
-                    accountID[j] = accountList.data.accounts[i].id;
-                    accountClearedBal[j] = (accountList.data.accounts[i].cleared_balance / 1000).toFixed(2);
-                    accountWorkingBal[j] = (accountList.data.accounts[i].uncleared_balance / 1000).toFixed(2);
-                    accountsModel.append({"title": accountName[j], "uuid": accountID[j]});
+                for (var i = 0; i < accountList.data.accounts.length; i++) {
 
-                    if (accountID[j] === k) {
+                    if (accountList.data.accounts[i].closed === false) {
 
-                        chosenAccount = j;
-                        settings.defaultAccountIndex = j; // incase list of accounts has changed since last use?
-                        defaultAccountAssigned = true;
+                        accountName[j] = accountList.data.accounts[i].name;
+                        accountID[j] = accountList.data.accounts[i].id;
+                        accountClearedBal[j] = (accountList.data.accounts[i].cleared_balance / 1000).toFixed(2);
+                        accountWorkingBal[j] = (accountList.data.accounts[i].uncleared_balance / 1000).toFixed(2);
+                        accountsModel.append({"title": accountName[j], "uuid": accountID[j]});
+
+                        coverBalComboModel.append({title: "Working " + accountName[j], uuid: accountID[j], account: true, cleared: false});
+                        coverBalComboModel.append({title: "Cleared " + accountName[j], uuid: accountID[j], account: true, cleared: true});
+
+                        if (accountID[j] === k) {
+
+                            chosenAccount = j;
+                            settings.defaultAccountIndex = j; // incase list of accounts has changed since last use?
+                            settings.sync();
+                            defaultAccountAssigned = true;
+
+                        }
+
+                        j = j + 1;
+                        l = l + 1;
 
                     }
 
-                    j = j + 1;
+                }
+
+                // If still no default, for whatever reason (e.g. account deleted since), first in list will be assigned default status.
+                if (defaultAccountAssigned === false) {
+
+                    chosenAccount = 0;
+                    settings.defaultAccountIndex = 0;
+                    settings.defaultAccount = accountID[0];
+                    settings.sync();
 
                 }
 
-            }
-
-            // If still no default, for whatever reason, first in list will be assigned default status.
-            if (defaultAccountAssigned === false) {
-
-                chosenAccount = 0;
-                settings.defaultAccountIndex = 0;
+                // incase user never interacts with account-choosing menu:
+                accountSendReady = "account_id\": \"" + accountID[chosenAccount];
+                loadingProgress = loadingProgress + 1;
+                statusLabel.text = statusLabel.text + ".";
 
             }
 
-            // incase user never interacts with account choosing menu:
-            accountSendReady = "account_id\": \"" + accountID[chosenAccount];
+            else if (o.status === 401 || o.status === 403) {
+
+                requestTimeoutTimer.stop();
+                needNewKey();
+
+            }
+/*
+            else if (o.status === 503) {
+
+                // account for maintenance periods etc. redirect to login for now where notice should show on page?
+                requestTimeoutTimer.stop();
+                needNewKey();
+
+            }
+*/
+            else {
+
+                requestTimeoutTimer.stop();
+                needNewKey();
+
+            }
+
+            // need to have loadCategoryData attatched to the end of loadAccountData in order for coverBalComboModel to be put together correctly.
+            loadCategoryData('https://api.youneedabudget.com/v1/budgets/' + settings.defaultBudget + '/categories', function (o) {
+
+                var categoryList = JSON.parse(o.responseText);
+
+                if (o.status === 200) {
+
+                    var k = 1; // for overall category count - first entry reserved for 'Default'
+                    categoryName[0] = "Default";
+                    categoryID[0] = "";
+                    budgetCategoriesModel.clear();
+
+                    // gather ID for Inflow category
+                    inflowCatId = categoryList.data.category_groups[0].categories[1].id;
+
+                    for (var i = 1; i < categoryList.data.category_groups.length; i++) { // '1' instead of '0' because we skip first category group (internal)
+
+                        if (categoryList.data.category_groups[i].hidden === false && categoryList.data.category_groups[i].name !== "Hidden Categories") {
+
+                            budgetCategoriesModel.append({ "groupName": categoryList.data.category_groups[i].name, "groupNameVis": true, "catNamesVis": false, "categories": {"name": "", "uuid": "", "budgeted": "", "activity": "", "balance": ""} });
+
+                            for (var j = 0; j < categoryList.data.category_groups[i].categories.length; j++) {
+
+                                if (categoryList.data.category_groups[i].categories[j].hidden === false) {
+
+                                    var categoryAmounts = ["string"];
+                                    categoryAmounts[0] = formatFigure(categoryList.data.category_groups[i].categories[j].budgeted);
+                                    categoryAmounts[1] = formatFigure(categoryList.data.category_groups[i].categories[j].activity);
+                                    categoryAmounts[2] = formatFigure(categoryList.data.category_groups[i].categories[j].balance);
+
+                                    categoryName[k] = categoryList.data.category_groups[i].categories[j].name;
+                                    categoryID[k] = categoryList.data.category_groups[i].categories[j].id;
+                                    coverBalComboList[k+1+(accountName.length*2)] = categoryList.data.category_groups[i].categories[j].name;
+                                    coverBalComboModel.append({title: categoryList.data.category_groups[i].categories[j].name, uuid: categoryList.data.category_groups[i].categories[j].id, account: false, cleared: false});
+                                    budgetCategoriesModel.append({ "groupName": "", "groupNameVis": false, "catNamesVis": true, "categories": { "name": categoryList.data.category_groups[i].categories[j].name, "uuid": categoryList.data.category_groups[i].categories[j].id, "budgeted": categoryAmounts[0], "activity": categoryAmounts[1], "balance": categoryAmounts[2] }});
+                                    k++;
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                    // incase user never interacts with category menu prior to saving, it'll be blank/default:
+                    categorySendReady = "";
+                    statusLabel.text = statusLabel.text + ".";
+                    loadingProgress = loadingProgress + 1;
+
+                }
+
+                else if (o.status === 401 || o.status === 403) {
+
+                    requestTimeoutTimer.stop();
+                    needNewKey();
+
+                }
+/* -- doing the same thing as 'else' for now at least.
+                else if (o.status === 503) {
+
+                    // account for maintenance periods etc. redirect to login for now where notice should show on page?
+                    requestTimeoutTimer.stop();
+                    needNewKey();
+
+                }
+*/
+                else {
+
+                    requestTimeoutTimer.stop();
+                    needNewKey();
+
+                }
+
+            });
 
         });
 
@@ -722,25 +846,7 @@ Page {
 
                     callback(myxhr);
 
-                    if (payeeListFromServer.status === 200) {
-
-                        // Payees gathered successfully.
-                        statusLabel.text = statusLabel.text + ".";
-                        loadingProgress = loadingProgress + 1;
-
-                    }
-
-                    else {
-
-                        // Error from server.
-
-                    }
-
-                }
-
-                else {
-
-                    // Current network connection attempt status for payees.
+                    // http status codes handled on other side
 
                 }
 
@@ -756,52 +862,6 @@ Page {
 
     }
 
-    function loadCategoryData(url, callback) {
-
-        var categoryListFromServer = new XMLHttpRequest();
-
-        categoryListFromServer.onreadystatechange = (function(myxhr) {
-
-            return function() {
-
-                if (myxhr.readyState === 4) {
-
-                    callback(myxhr);
-
-                    if (categoryListFromServer.status === 200) {
-
-                        // Categories gathered successfully.
-                        loadingProgress = loadingProgress + 1;
-                        statusLabel.text = statusLabel.text + ".";
-
-                    }
-
-                    else {
-
-                        // Error from server.
-
-                    }
-
-                }
-
-                else {
-
-                    // Current network connection attempt status for categories.
-
-                }
-
-            }
-
-        })(categoryListFromServer);
-
-        categoryListFromServer.open('GET', url);
-        categoryListFromServer.setRequestHeader("Content-Type", "application/json");
-        categoryListFromServer.setRequestHeader("Accept", "application/json");
-        categoryListFromServer.setRequestHeader("Authorization", "Bearer " + settings.accessKey);
-        categoryListFromServer.send('');
-
-    }
-
     function loadAccountData(url, callback) {
 
         var accountListFromServer = new XMLHttpRequest();
@@ -813,26 +873,6 @@ Page {
                 if (myxhr.readyState === 4) {
 
                     callback(myxhr);
-
-                    if (accountListFromServer.status === 200) {
-
-                        // Accounts gathered successfully.
-                        loadingProgress = loadingProgress + 1;
-                        statusLabel.text = statusLabel.text + ".";
-
-                    }
-
-                    else {
-
-                        // Error from server.
-
-                    }
-
-                }
-
-                else {
-
-                    // Current network connection attempt status for accounts.
 
                 }
 
@@ -850,7 +890,7 @@ Page {
 
     function loadBudgetList(url, callback) {
 
-        requestTimoutTimer.start();
+        requestTimeoutTimer.start();
 
         var budgetListFromServer = new XMLHttpRequest();
 
@@ -861,26 +901,6 @@ Page {
                 if (myxhr.readyState === 4) {
 
                     callback(myxhr);
-
-                    if (budgetListFromServer.status === 200) {
-
-                        // Budgets gathered successfully.
-                        loadingProgress = loadingProgress + 1;
-                        statusLabel.text = statusLabel.text + ".";
-
-                    }
-
-                    else {
-
-                        // Error from server.
-
-                    }
-
-                }
-
-                else {
-
-                    // Current network connection attempt status for categories.
 
                 }
 
@@ -901,9 +921,10 @@ Page {
         // courtesy of StackOverflow user vsync -
         // https://stackoverflow.com/questions/12006095/javascript-how-to-check-if-character-is-rtl/14824756#14824756
 
-        var ltrChars    = 'A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02B8\u0300-\u0590\u0800-\u1FFF'+'\u2C00-\uFB1C\uFDFE-\uFE6F\uFEFD-\uFFFF',
-            rtlChars    = '\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC',
+        var ltrChars = 'A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02B8\u0300-\u0590\u0800-\u1FFF'+'\u2C00-\uFB1C\uFDFE-\uFE6F\uFEFD-\uFFFF',
+            rtlChars = '\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC',
             rtlDirCheck = new RegExp('^[^'+ltrChars+']*['+rtlChars+']');
+
         return rtlDirCheck.test(s);
 
     }
