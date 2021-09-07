@@ -15,33 +15,33 @@ public:
     explicit NetworkPostAccess() { }
 
     QNetworkAccessManager connectionManager;
-    QNetworkRequest saveTransactionRequest;
+    QNetworkRequest request;
     QByteArray responseText;
-    QNetworkReply* saveReply;
+    QNetworkReply* reply;
     QVariant responseCode;
 
     Q_INVOKABLE void post(QString saveUrl, QByteArray saveData, QByteArray bearerSessionKey) {
 
-        saveTransactionRequest.setUrl(saveUrl);
-        saveTransactionRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        saveTransactionRequest.setRawHeader("Accept", "application/json");
-        saveTransactionRequest.setRawHeader("Authorization", bearerSessionKey);
+        request.setUrl(saveUrl);
+        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        request.setRawHeader("Accept", "application/json");
+        request.setRawHeader("Authorization", bearerSessionKey);
 
-        saveReply = connectionManager.post(saveTransactionRequest, saveData);
+        reply = connectionManager.post(request, saveData);
 
-        connect(saveReply, &QNetworkReply::finished, [=]() {
+        connect(reply, &QNetworkReply::finished, [=]() {
 
-            if(saveReply->error() == QNetworkReply::NoError) {
+            if (reply->error() == QNetworkReply::NoError) {
 
-                responseText = saveReply->readAll();
-                responseCode = saveReply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
+                responseText = reply->readAll();
+                responseCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
                 finished(responseText, responseCode);
 
             }
 
             else { // handle error
 
-                responseCode = saveReply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
+                responseCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
                 finished(responseText, responseCode);
 
             }
