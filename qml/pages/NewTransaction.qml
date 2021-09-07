@@ -8,6 +8,7 @@ Page {
     id: page
     allowedOrientations: Orientation.PortraitMask
     property string chosenPayee
+    property string blankOrMinus: "-"
     property bool notOperator
 
     Component.onCompleted: {
@@ -40,27 +41,65 @@ Page {
 
                 else {
 
-                    transactionSaved.previewSummary = "Invalid Category, Remaining Data Saved";
+                    transactionSaved.previewSummary = "Invalid Category - Rest of Transaction Saved";
                     savingBusy.running = false;
                     transactionSaved.publish();
 
                 }
 
+                costFigure.text = "";
+                searchField.text = "";
+                payeeListModel.clear();
+                categoryBox.currentIndex = 0;
+                clearedSwitch.checked = false;
+                incomeSwitch.checked = false;
+                memoSwitch.checked = false;
+                costFigure.focus = false;
+
+            }
+
+            else if (responseCode === 401 || responseCode === 403) {
+
+                transactionSaved.previewSummary = "Access Expired - Reauthorizing...";
+                savingBusy.running = false;
+                transactionSaved.publish();
+                loadingProgress = 0;
+                settings.accessKey = "";
+                settings.sync();
+                pageStack.clear();
+                pageStack.replace(Qt.resolvedUrl("LoadBudget.qml"));
+
+            }
+
+            else if (responseCode === 503) {
+
+                // will have better way to handle with later version, for now login page should notify user of API status if still down.
+                transactionSaved.previewSummary = "Unable to Save Transaction - API Unavailable";
+                savingBusy.running = false;
+                transactionSaved.publish();
+                loadingProgress = 0;
+                settings.accessKey = "";
+                settings.sync();
+                pageStack.clear();
+                pageStack.replace(Qt.resolvedUrl("LoadBudget.qml"));
+
             }
 
             else {
 
+                transactionSaved.previewSummary = "Unknown Error - Please Try Again";
                 savingBusy.running = false;
                 transactionNotSaved.publish();
+                costFigure.text = "";
+                searchField.text = "";
+                payeeListModel.clear();
+                categoryBox.currentIndex = 0;
+                clearedSwitch.checked = false;
+                incomeSwitch.checked = false;
+                memoSwitch.checked = false;
+                costFigure.focus = false;
 
             }
-
-            costFigure.text = "";
-            searchField.text = "";
-            payeeListModel.clear();
-            categoryBox.currentIndex = 0;
-            clearedSwitch.checked = false;
-            memoSwitch.checked = false;
 
         }
 
@@ -91,7 +130,7 @@ Page {
                     if (decimalPlaces !== 3) amountSendReady = amountSendReady * 10;
                     chosenPayee = chosenPayee.replace(":", "\\:"); // avoiding errors when saving
                     var saveTransactionUrl = "https://api.youneedabudget.com/v1/budgets/" + settings.defaultBudget + "/transactions";
-                    var data = "{\"transaction\": {\"" + accountSendReady + "\",\"date\": \"" + todaysDate.toISOString().substring(0, 10) + "\",\"amount\":-" + amountSendReady + "," + categorySendReady + payeeSendReady + memoSendReady + clearedStatus + "\"approved\": true}}"
+                    var data = "{\"transaction\": {\"" + accountSendReady + "\",\"date\": \"" + todaysDate.toISOString().substring(0, 10) + "\",\"amount\":" + blankOrMinus + amountSendReady + "," + categorySendReady + payeeSendReady + memoSendReady + clearedStatus + "\"approved\": true}}"
                     httpPostInCPP.post(saveTransactionUrl, data, "Bearer " + settings.accessKey);
 
                 }
@@ -181,12 +220,12 @@ Page {
                     opacity: 1.0
                     height: shadowAmount.paintedHeight + (Theme.paddingLarge * 2)
                     width: shadowAmount.paintedWidth + (Theme.paddingLarge * 4)
-                    radius: 20
+                    radius: 30
                     color: "transparent"
 
                     border {
 
-                        width: 1
+                        width: 4
                         color: Theme.primaryColor
 
                     }
@@ -246,7 +285,7 @@ Page {
 
                                 notOperator = true; // So as to not loop back to this part of the textChanged function when these changes are made.
 
-                                if (text === "" || text === currencySymbol[4]) {  //  <-- need to fix as this is no longer required if field already has formatted zero amount?
+                                if (text === "" || text === currencySymbol[4]) {
 
                                     if (decimalPlaces === 3) {
 
@@ -351,6 +390,48 @@ Page {
 
                     }
 
+                    Rectangle {
+
+                        id: figureRectangleHorizontal
+                        anchors.centerIn: figureRectangle
+                        width: figureRectangle.width - 4
+                        height: figureRectangle.height - 4
+                        smooth: true
+                        radius: 30
+                        color: "transparent"
+                        visible: false
+
+                        border {
+
+                            width: 6
+                            color: Theme.colorScheme == Theme.DarkOnLight ? "green" : "lightgreen"
+
+                        }
+
+                        Rectangle {
+
+                            id: figureRectangleInnerInner
+
+                            anchors.centerIn: figureRectangleHorizontal
+
+                            width: figureRectangleHorizontal.width - 8
+                            height: figureRectangleHorizontal.height - 8
+                            smooth: true
+                            radius: 30
+                            color: "transparent"
+                            visible: false
+
+                            border {
+
+                                width: 2
+                                color: Theme.primaryColor
+
+                            }
+
+                        }
+
+                    }
+
                 }
 
                 // invisible label for centering purposes.
@@ -399,6 +480,7 @@ Page {
                             categoryBox.visible = false;
                             accountBox.visible = false;
                             clearedSwitch.visible = false;
+                            incomeSwitch.visible = false;
                             memoSwitch.visible = false;
                             if (memoSwitch.checked) memoText.visible = false;
 
@@ -413,12 +495,13 @@ Page {
                             categoryBox.visible = true;
                             accountBox.visible = true;
                             clearedSwitch.visible = true;
+                            incomeSwitch.visible = true;
                             memoSwitch.visible = true;
                             if (memoSwitch.checked) memoText.visible = true;
                             payeeListModel.clear();
 
                             // if user moved on by just tapping outside field, as opposed to enter key or selecting an existing payee,
-                            // possible that it's a new payee and so directing user to choose a category as leaving choice as 'default'
+                            // possible that it's a new payee and so directing user to choose a category, since leaving choice as 'default'
                             // will result in no category being assigned.
                             if (chosenPayee !== "") categoryBox.focus = true;
 
@@ -482,7 +565,6 @@ Page {
 
                             function update() {
 
-                                // payeeTextField.text = payeeSearchListView.headerItem.text; // match with textfield incase user hides search and wants to leave as is (new payee).
                                 clear();
 
                                 for (var i = 0; i < payeeName.length; i++) {
@@ -607,6 +689,50 @@ Page {
                                 }
 
                             }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+            Row {
+
+                width: parent.width
+                spacing: Theme.paddingMedium
+
+                TextSwitch {
+
+                    id: incomeSwitch
+                    text: qsTr("Inflow")
+
+                    onCheckedChanged: {
+
+                        if (checked) {
+
+                            blankOrMinus = "";
+                            figureRectangleHorizontal.visible = true;
+                            figureRectangleInnerInner.visible = true;
+                            searchField.placeholderText = qsTr("Payer");
+                            categoryBox.currentItem = null;
+                            categoryBox.label = qsTr("Inflow: Ready to Assign");
+                            categoryBox.enabled = false;
+                            categorySendReady = "\"category_id\": \"" + inflowCatId + "\",";
+
+                        }
+
+                        else {
+
+                            blankOrMinus = "-"
+                            figureRectangleHorizontal.visible = false;
+                            figureRectangleInnerInner.visible = false;
+                            searchField.placeholderText = qsTr("Payee");
+                            categoryBox.currentIndex = 0;
+                            categoryBox.label = qsTr("Category");
+                            categoryBox.enabled = true;
+                            categorySendReady = "";
 
                         }
 
@@ -756,6 +882,7 @@ Page {
         categoryBox.visible = true;
         accountBox.visible = true;
         clearedSwitch.visible = true;
+        incomeSwitch.visible = true;
         memoSwitch.visible = true;
         if (memoSwitch.checked) memoText.visible = true;
         searchField.text = chosenPayee; // need to put this line after components made visible again.
