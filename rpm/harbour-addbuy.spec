@@ -9,7 +9,7 @@ Name:       harbour-addbuy
 # << macros
 
 Summary:    AddBuy for YNAB
-Version:    0.1
+Version:    0.2
 Release:    1
 Group:      Qt/Qt
 License:    LICENSE
