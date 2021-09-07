@@ -15,7 +15,7 @@ Page {
         if (settings.accessKey === "") {
 
             authorizeUser.visible = true;
-            authorizeUser.url = "https://app.youneedabudget.com/oauth/authorize?client_id=ec095b5d959f770038b415f6511e91b6c3362513ba25b6b94956b2d6d6b9849a&redirect_uri=https://mjbdev.net/addbuy/oauthSuccess.html&response_type=token";
+            authorizeUser.url = "https://app.youneedabudget.com/oauth/authorize?client_id=0000000000000000000000-CLIENTID-GOES-HERE-0000000000000000000000&redirect_uri=https://mjbdev.net/addbuy/oauthSuccess.html&response_type=token";
 
         }
 
