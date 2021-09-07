@@ -1,4 +1,4 @@
-import QtQuick 2.2
+import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Nemo.Configuration 1.0
 import Nemo.Notifications 1.0
@@ -7,13 +7,7 @@ import "pages"
 ApplicationWindow {
 
     id: appWindow
-
-    initialPage: Component {
-
-        LoadBudget { }
-
-    }
-
+    initialPage: Component { LoadBudget { } }
     cover: Qt.resolvedUrl("cover/CoverPage.qml")
     allowedOrientations: defaultAllowedOrientations
 
@@ -22,15 +16,27 @@ ApplicationWindow {
         path: "/apps/harbour-addbuy"
         id: settings
 
-        // Pending addition of Sailfish Secrets, after which will be able to securely store access key and/or add OAuth (even with two-hour limit).
-        property string accessKey: "AccessKeyHere"
+        property string accessKey: ""
         property string defaultAccount: "notYetSetup"
         property int defaultAccountIndex
-        property string defaultBudget: "notYetSetup"
+        property string defaultBudget: ""
         property int defaultBudgetIndex
-        property var recentDaysBack: 1 // default to 2 weeks
+        property var coverBalance1: ["Default Working", "defaultWorking", true, false]
+        property string coverBalance1Label
+        property int coverBalance1Index: 0
+        property bool coverBalance1Cleared
+        property bool coverBalance1Category
+        property var coverBalance2: ["Default Cleared", "defaultCleared", true, true]
+        property string coverBalance2Label
+        property int coverBalance2Index: 1
+        property bool coverBalance2Cleared
+        property bool coverBalance2Category
+        property int recentDaysBack: 0 // default is one week
         property bool recentsOldToNew
         property bool recentsShowBalances
+        property bool recentsShowSelectedAcc
+        property bool setupComplete: false
+        property bool forceForgetSignIn: true
 
     }
 
@@ -47,6 +53,7 @@ ApplicationWindow {
     property var budgetName: ["string"]
     property var budgetID: ["string"]
     property var recentsDate: ["- -"]
+    property var recentsDateShort: ["- -"]
     property var recentsPayee: ["- -"]
     property var recentsCategory: ["- -"]
     property var recentsInflow: ["- -"]
@@ -54,7 +61,9 @@ ApplicationWindow {
     property var recentsUncleared: [false]
     property var accountClearedBal: ["string"]
     property var accountWorkingBal: ["string"]
+    property var coverBalComboList: ["Default Account Working", "Default Account Cleared"]
     property bool symbolFirst
+    property bool apiKeyAuthorized: true
     property int chosenRecentsAccount
     property int chosenAccount
     property int decimalPlaces
@@ -70,6 +79,8 @@ ApplicationWindow {
     property string assignedCategory
     property string workingBalance
     property string clearedBalance
+    property string amountString
+    property string inflowCatId
 
     ListModel {
 
@@ -102,14 +113,34 @@ ApplicationWindow {
 
     }
 
-    onLoadingProgressChanged: {
+    ListModel {
 
-        // Sum is 5 when all data types have loaded. User may run up number later in with changes to settings, not an issue so no need for ifs to cover that.
-        if (loadingProgress === 5) pageStack.replace(Qt.resolvedUrl("pages/NewTransaction.qml"), null, PageStackAction.Immediate);
+        id: coverBalComboModel
+
+        ListElement {
+
+            title: ""; uuid: ""; account: false; cleared: false
+
+        }
 
     }
 
-    // Here to be accessible by both LoadBudget and Settings.
+    onLoadingProgressChanged: {
+
+        // Sum is 4 when all data types have loaded. User may run up number later in with changes to settings, not an issue so no need for ifs to cover that.
+        if (loadingProgress === 4) pageStack.replace(Qt.resolvedUrl("pages/NewTransaction.qml"), null, PageStackAction.Immediate);
+
+    }
+
+    Notification {
+
+        id: needNewKeyNotify
+        appName: "AddBuy"
+        isTransient: true
+        previewSummary: qsTr("Authorization has expired. Please re-authorize.")
+        expireTimeout: 2500
+
+    }
 
     function loadBudgetSettings(url, callback) {
 
@@ -123,25 +154,6 @@ ApplicationWindow {
 
                     callback(myxhr);
 
-                    if (budgetSettingsFromServer.status === 200) {
-
-                        // Budget settings loaded successfully.
-                        loadingProgress = loadingProgress + 1;
-
-                    }
-
-                    else {
-
-                        // Error from server.
-
-                    }
-
-                }
-
-                else {
-
-                    // Current network connection attempt status for budget settings.
-
                 }
 
             }
@@ -153,6 +165,183 @@ ApplicationWindow {
         budgetSettingsFromServer.setRequestHeader("Accept", "application/json");
         budgetSettingsFromServer.setRequestHeader("Authorization", "Bearer " + settings.accessKey);
         budgetSettingsFromServer.send('');
+
+    }
+
+    function loadAccountBalances(url, callback) {
+
+        var accountBalancesFromServer = new XMLHttpRequest();
+
+        accountBalancesFromServer.onreadystatechange = (function(myxhr) {
+
+            return function() {
+
+                if (myxhr.readyState === 4) {
+
+                    callback(myxhr);
+
+                }
+
+            }
+
+        })(accountBalancesFromServer);
+
+        accountBalancesFromServer.open('GET', url);
+        accountBalancesFromServer.setRequestHeader("Content-Type", "application/json");
+        accountBalancesFromServer.setRequestHeader("Accept", "application/json");
+        accountBalancesFromServer.setRequestHeader("Authorization", "Bearer " + settings.accessKey);
+        accountBalancesFromServer.send('');
+
+    }
+
+    function loadCategoryData(url, callback) {
+
+        var categoryListFromServer = new XMLHttpRequest();
+
+        categoryListFromServer.onreadystatechange = (function(myxhr) {
+
+            return function() {
+
+                if (myxhr.readyState === 4) {
+
+                    callback(myxhr);
+
+                }
+
+            }
+
+        })(categoryListFromServer);
+
+        categoryListFromServer.open('GET', url);
+        categoryListFromServer.setRequestHeader("Content-Type", "application/json");
+        categoryListFromServer.setRequestHeader("Accept", "application/json");
+        categoryListFromServer.setRequestHeader("Authorization", "Bearer " + settings.accessKey);
+        categoryListFromServer.send('');
+
+    }
+
+    function formatFigure(amount) {
+
+        var putBackMinusSign = false;
+
+        if (amount === 0) {
+
+            switch (decimalPlaces) {
+
+            case 0:
+                amountString = currencySymbol[0] + "0" + currencySymbol[1];
+                break;
+            case 2:
+                amountString = currencySymbol[0] + "0.00" + currencySymbol[1];
+                break;
+            case 3:
+                amountString = currencySymbol[0] + "0.000" + currencySymbol[1];
+
+            }
+
+        }
+
+        else {
+
+            if (amount < 0) {
+
+                putBackMinusSign = true;
+                amount = amount * -1;
+
+            }
+
+            switch (decimalPlaces) {
+
+                case 0:
+
+                    amountString = (amount / 10).toString();
+
+                    if (amountString.length > 3) {
+
+                        amountString = amountString.slice(0, (amountString.length - 3)) + groupSeparator + amountString.slice((amountString.length - 3), amountString.length);
+
+                        if (amountString.length > 7) {
+
+                            amountString = amountString.slice(0, (amountString.length - 7)) + groupSeparator + amountString.slice((amountString.length - 7), amountString.length);
+
+                            if (amountString.length > 11) amountString = amountString.slice(0, (amountString.length - 11)) + groupSeparator + amountString.slice((amountString.length - 11), amountString.length);
+
+                        }
+
+                    }
+
+                break;
+
+                case 2:
+
+                    amountString = (amount / 10).toString();
+
+                    if (amountString.length < 3) {
+
+                        if (amountString.length < 2) amountString = "0" + amountString;
+                        amountString = "0" + amountString;
+
+                    }
+
+                    amountString = amountString.slice(0, (amountString.length - decimalPlaces)) + decimalSeparator + amountString.slice((amountString.length - decimalPlaces), amountString.length);
+
+                    if (amountString.length > 6) {
+
+                        amountString = amountString.slice(0, (amountString.length - 6)) + groupSeparator + amountString.slice((amountString.length - 6), amountString.length);
+
+                        if (amountString.length > 10) amountString = amountString.slice(0, (amountString.length - 10)) + groupSeparator + amountString.slice((amountString.length - 10), amountString.length);
+
+                    }
+
+                break;
+
+                case 3:
+
+                    amountString = (amount).toString();
+
+                    if (amountString.length < 4) {
+
+                        if (amountString.length < 3) {
+
+                            if (amountString.length < 2) amountString = "0" + amountString;
+                            amountString = "0" + amountString
+
+                        }
+
+                        amountString = "0" + amountString;
+
+                    }
+
+                    amountString = amountString.slice(0, (amountString.length - decimalPlaces)) + decimalSeparator + amountString.slice((amountString.length - decimalPlaces), amountString.length);
+
+                    if (amountString.length > 7) {
+
+                        amountString = amountString.slice(0, (amountString.length - 7)) + groupSeparator + amountString.slice((amountString.length - 7), amountString.length);
+
+                        if (amountString.length > 11) amountString = amountString.slice(0, (amountString.length - 11)) + groupSeparator + amountString.slice((amountString.length - 11), amountString.length);
+
+                    }
+
+            }
+
+            if (putBackMinusSign) amountString = "-" + currencySymbol[0] + amountString + currencySymbol[1];
+            else amountString = currencySymbol[0] + amountString + currencySymbol[1];
+
+        }
+
+        return(amountString);
+
+    }
+
+    function needNewKey() {
+
+        needNewKeyNotify.previewSummary = "Access Expired - Reauthorizing...";
+        needNewKeyNotify.publish();
+        loadingProgress = 0;
+        settings.accessKey = "";
+        settings.sync();
+        pageStack.clear();
+        pageStack.replace(Qt.resolvedUrl("pages/LoadBudget.qml"));
 
     }
 
