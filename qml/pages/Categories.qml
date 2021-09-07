@@ -12,7 +12,7 @@ Page {
         width: parent.width
         contentHeight: column.height
         id: mainListView
-        spacing: isPortrait ? Theme.paddingSmall : Theme.paddingSmall
+        spacing: Theme.paddingSmall
 
         Column {
 
@@ -57,8 +57,8 @@ Page {
 
                                 width: parent.width
                                 topPadding: model.index === 0 ? 0 : Theme.paddingSmall
-                                leftPadding: isPortrait ? Theme.paddingMedium * 1.5 : Theme.paddingMedium * 2.5
-                                rightPadding: isPortrait ? Theme.paddingMedium * 1.5 : Theme.paddingMedium * 2.5
+                                leftPadding: Theme.horizontalPageMargin
+                                rightPadding: Theme.horizontalPageMargin
                                 bottomPadding: Theme.paddingSmall
                                 text: groupName
                                 font.pixelSize: isPortrait ? Theme.fontSizeSmall : Theme.fontSizeMedium
@@ -70,9 +70,9 @@ Page {
                         Row {
 
                             id: headersRow
-                            width: parent.width
+                            width: parent.width - (Theme.horizontalPageMargin * 2)
                             spacing: 0
-                            x: isPortrait ? Theme.paddingMedium * 1.5 : Theme.paddingMedium * 2.5
+                            x: Theme.horizontalPageMargin
                             visible: groupNameVis ? true : false
 
                             Label {
@@ -83,7 +83,7 @@ Page {
                                 topPadding: Theme.paddingSmall
                                 bottomPadding:  Theme.paddingSmall
                                 truncationMode: TruncationMode.Fade
-                                width: isPortrait ? parent.width * 0.6 - (Theme.paddingMedium * 1.5) : parent.width * 0.4 - (Theme.paddingMedium * 2.5)
+                                width: isPortrait ? parent.width * 0.6 : parent.width * 0.4
 
                             }
 
@@ -97,7 +97,7 @@ Page {
                                 bottomPadding:  Theme.paddingSmall
                                 truncationMode: TruncationMode.Fade
                                 horizontalAlignment: "AlignRight"
-                                width: (parent.width * 0.2)
+                                width: parent.width * 0.2
 
                             }
 
@@ -111,7 +111,7 @@ Page {
                                 bottomPadding:  Theme.paddingSmall
                                 truncationMode: TruncationMode.Fade
                                 horizontalAlignment: "AlignRight"
-                                width: (parent.width * 0.2)
+                                width: parent.width * 0.2
 
                             }
 
@@ -124,7 +124,7 @@ Page {
                                 bottomPadding:  Theme.paddingSmall
                                 truncationMode: TruncationMode.Fade
                                 horizontalAlignment: "AlignRight"
-                                width: isPortrait ? (parent.width * 0.4) - (Theme.paddingMedium * 1.5) : (parent.width * 0.2) - (Theme.paddingMedium * 2.5)
+                                width: isPortrait ? parent.width * 0.4 : parent.width * 0.2
 
                             }
 
@@ -132,10 +132,10 @@ Page {
 
                         Row {
 
-                            width: parent.width
+                            width: parent.width - (Theme.horizontalPageMargin * 2)
                             spacing: 0
                             visible: catNamesVis ? true : false
-                            x: isPortrait ? Theme.paddingMedium * 1.5 : Theme.paddingMedium * 2.5
+                            x: Theme.horizontalPageMargin
 
                             Label {
 
@@ -144,7 +144,7 @@ Page {
                                 topPadding: Theme.paddingSmall
                                 bottomPadding: Theme.paddingSmall
                                 truncationMode: TruncationMode.Fade
-                                width: isPortrait ? (parent.width * 0.6) - (Theme.paddingMedium * 1.5) : (parent.width * 0.4) - (Theme.paddingMedium * 2.5)
+                                width: isPortrait ? parent.width * 0.6 : parent.width * 0.4
 
                             }
 
@@ -157,7 +157,7 @@ Page {
                                 bottomPadding: Theme.paddingSmall
                                 truncationMode: TruncationMode.Fade
                                 horizontalAlignment: "AlignRight"
-                                width: (parent.width * 0.2)
+                                width: parent.width * 0.2
 
                             }
 
@@ -170,7 +170,7 @@ Page {
                                 bottomPadding: Theme.paddingSmall
                                 truncationMode: TruncationMode.Fade
                                 horizontalAlignment: "AlignRight"
-                                width: (parent.width * 0.2)
+                                width: parent.width * 0.2
 
                             }
 
@@ -182,7 +182,7 @@ Page {
                                 bottomPadding: Theme.paddingSmall
                                 truncationMode: TruncationMode.Fade
                                 horizontalAlignment: "AlignRight"
-                                width: isPortrait ? (parent.width * 0.4) - (Theme.paddingMedium * 1.5) : (parent.width * 0.2) - (Theme.paddingMedium * 2.5)
+                                width: isPortrait ? parent.width * 0.4 : parent.width * 0.2
 
                             }
 
@@ -198,7 +198,7 @@ Page {
 
                 id: gapRow
                 width: parent.width
-                height: Theme.paddingSmall
+                height: Theme.paddingMedium
 
             }
 
