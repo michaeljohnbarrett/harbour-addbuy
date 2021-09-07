@@ -6,9 +6,8 @@
 #include <sailfishapp.h>
 #include "networkpostaccess.h"
 
+int main(int argc, char *argv[]) {
 
-int main(int argc, char *argv[])
-{
     // SailfishApp::main() will display "qml/harbour-addbuy.qml", if you need more
     // control over initialization, you can use:
     //
@@ -21,4 +20,5 @@ int main(int argc, char *argv[])
 
     qmlRegisterType<NetworkPostAccess>("NetworkPostAccess", 1, 0, "NetworkPostAccess");
     return SailfishApp::main(argc, argv);
+
 }
