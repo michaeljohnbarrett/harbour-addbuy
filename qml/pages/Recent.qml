@@ -1,5 +1,6 @@
 import QtQuick 2.2
 import Sailfish.Silica 1.0
+import Nemo.Notifications 1.0
 
 Page {
 
@@ -12,12 +13,22 @@ Page {
 
         ListElement {
 
-            date: "..."; payee: "Loading..."; category: "..."; inflow: "..."; outflow: "..."; uncleared: false
+            dateShort: "..."; date: "..."; payee: "Loading..."; category: "..."; inflow: "..."; outflow: "..."; uncleared: false
 
         }
 
     }
+    /*
+    onOrientationChanged: {
 
+        if (page.orientation === Orientation.Portrait || ) {
+
+
+
+        }
+
+    }
+*/
     Component.onCompleted: {
 
         if (settings.recentsShowSelectedAcc) chosenRecentsAccount = chosenAccount;
@@ -57,246 +68,109 @@ Page {
             // render YNAB's date format compatible with Qt's:
             dateFormat = dateFormat.replace(/DD/, "dd");
             dateFormat = dateFormat.replace(/YYYY/, "yyyy");
+            // need to shorten somewhat in portrait mode for spacing
+            var shortDateFormat = dateFormat.replace(/yyyy/, "yy");
 
             var recentTransactionList = JSON.parse(o.responseText);
-            recentTransactionsModel.clear(); // clear the existing one line
 
-            var j = recentTransactionList.data.transactions.length;
+            if (o.status === 200) {
 
-            for (var i = 0; i < recentTransactionList.data.transactions.length; i++) {
+                recentTransactionsModel.clear(); // clear the existing one line
 
-                j--;
+                var j = recentTransactionList.data.transactions.length;
 
-                recentsDate[j] = Qt.formatDate(recentTransactionList.data.transactions[i].date, dateFormat);
+                for (var i = 0; i < recentTransactionList.data.transactions.length; i++) {
 
-                recentsPayee[j] = recentTransactionList.data.transactions[i].payee_name;
-                recentsCategory[j] = recentTransactionList.data.transactions[i].category_name;
+                    j--;
+                    recentsDate[j] = Qt.formatDate(recentTransactionList.data.transactions[i].date, dateFormat);
+                    recentsDateShort[j] = Qt.formatDate(recentTransactionList.data.transactions[i].date, shortDateFormat);
+                    recentsPayee[j] = recentTransactionList.data.transactions[i].payee_name;
+                    recentsCategory[j] = recentTransactionList.data.transactions[i].category_name;
 
-                if (recentTransactionList.data.transactions[i].amount >= 0) { // amount is income
+                    if (recentTransactionList.data.transactions[i].amount >= 0) { // amount is income
 
-                    recentsInflow[j] = currencySymbol[0] + ((recentTransactionList.data.transactions[i].amount / 1000).toFixed(2)) + currencySymbol[1];
-                    recentsOutflow[j] = "";
+                        recentsInflow[j] = formatFigure(recentTransactionList.data.transactions[i].amount);
+                        recentsOutflow[j] = "";
+
+                    }
+
+                    else { // amount is expenditure, * -1 since don't need minus sign in column
+
+                        recentsOutflow[j] = formatFigure(recentTransactionList.data.transactions[i].amount * -1);
+                        recentsInflow[j] = "";
+
+                    }
+
+                    if (recentTransactionList.data.transactions[i].cleared === "cleared" || recentTransactionList.data.transactions[i].cleared === "reconciled") recentsUncleared[j] = false;
+                    else recentsUncleared[j] = true;
+
+                    // if user has chosen to list recents as oldest to newest, we can just add each one now as the order doesn't need to be reversed.
+                    if (settings.recentsOldToNew === true) {
+
+                        recentTransactionsModel.append({ dateShort: recentsDateShort[j], date: recentsDate[j], payee: recentsPayee[j], category: recentsCategory[j], inflow: recentsInflow[j], outflow: recentsOutflow[j], uncleared: recentsUncleared[j] });
+
+                    }
 
                 }
 
-                else { // amount is expenditure, dividing by -1000 as we don't need minus sign in column
+                if (settings.recentsOldToNew === false) {
 
-                    recentsOutflow[j] = currencySymbol[0] + ((recentTransactionList.data.transactions[i].amount / -1000).toFixed(2)) + currencySymbol[1];
-                    recentsInflow[j] = "";
+                    for (var k = 0; k < recentTransactionList.data.transactions.length; k++) {
+
+                        recentTransactionsModel.append({ dateShort: recentsDateShort[k], date: recentsDate[k], payee: recentsPayee[k], category: recentsCategory[k], inflow: recentsInflow[k], outflow: recentsOutflow[k], uncleared: recentsUncleared[k] });
+
+                    }
+
+                }
+
+                if (settings.recentsShowBalances) {
+
+                    loadAccountBalances('https://api.youneedabudget.com/v1/budgets/' + settings.defaultBudget + '/accounts/' + accountID[l], function (o) {
+
+                        var accountBalances = JSON.parse(o.responseText);
+
+                        if (o.status === 200) {
+
+                            workingBalance = formatFigure(accountBalances.data.account.balance);
+                            clearedBalance = formatFigure(accountBalances.data.account.cleared_balance);
+
+                        }
+
+                        else if (o.status === 401 || o.status === 403) {
+
+                            needNewKey();
+
+                        }
+
+                        else {
+
+                            unknownError.previewSummary = "Unknown Error - Unable to Load Account Balances";
+                            unknownError.publish();
+
+                        }
+
+                    });
 
                 }
 
-                if (recentTransactionList.data.transactions[i].cleared === "cleared" || recentTransactionList.data.transactions[i].cleared === "reconciled") recentsUncleared[j] = false;
-                else recentsUncleared[j] = true;
-
-                // if user has chosen to list recents as oldest to newest, we can just add each one now as the order doesn't need to be reversed.
-                if (settings.recentsOldToNew === true) {
-
-                    recentTransactionsModel.append({ date: recentsDate[j], payee: recentsPayee[j], category: recentsCategory[j], inflow: recentsInflow[j], outflow: recentsOutflow[j], uncleared: recentsUncleared[j] });
-
-                }
+                recentsListView.forceLayout();
 
             }
 
-            if (settings.recentsOldToNew === false) {
+            else if (o.status === 401 || o.status === 403) {
 
-                for (var k = 0; k < recentTransactionList.data.transactions.length; k++) {
+                needNewKey();
 
-                    recentTransactionsModel.append({ date: recentsDate[k], payee: recentsPayee[k], category: recentsCategory[k], inflow: recentsInflow[k], outflow: recentsOutflow[k], uncleared: recentsUncleared[k] });
+            }
 
-                }
+            else {
+
+                unknownError.previewSummary = "Unknown Error - Unable to Load Transactions";
+                unknownError.publish();
 
             }
 
         });
-
-        if (settings.recentsShowBalances) {
-
-            loadAccountBalances('https://api.youneedabudget.com/v1/budgets/' + settings.defaultBudget + '/accounts/' + accountID[l], function (o) {
-
-                var accountBalances = JSON.parse(o.responseText);
-                var workingBalanceFigure = accountBalances.data.account.balance;
-                var clearedBalanceFigure = accountBalances.data.account.cleared_balance;
-                var putBackMinusSign = false;
-
-                if (workingBalanceFigure === 0) {
-
-                    switch (decimalPlaces) {
-
-                    case 0:
-                        workingBalance = currencySymbol[0] + "0" + currencySymbol[1];
-                        break;
-                    case 2:
-                        workingBalance = currencySymbol[0] + "0.00" + currencySymbol[1];
-                        break;
-                    case 3:
-                        workingBalance = currencySymbol[0] + "0.000" + currencySymbol[1];
-
-                    }
-
-                }
-
-                else {
-
-                    if (workingBalanceFigure < 0) {
-
-                        putBackMinusSign = true;
-                        workingBalanceFigure = workingBalanceFigure * -1;
-
-                    }
-
-                    switch (decimalPlaces) {
-
-                        case 0:
-
-                            workingBalance = (workingBalanceFigure / 10).toString();
-
-                            // place group separators
-                            if (workingBalance.length > 3) {
-
-                                workingBalance = workingBalance.slice(0, (workingBalance.length - 3)) + groupSeparator + workingBalance.slice((workingBalance.length - 3), workingBalance.length);
-
-                                if (workingBalance.length > 7) {
-
-                                    workingBalance = workingBalance.slice(0, (workingBalance.length - 7)) + groupSeparator + workingBalance.slice((workingBalance.length - 7), workingBalance.length);
-
-                                    if (workingBalance.length > 11) workingBalance = workingBalance.slice(0, (workingBalance.length - 11)) + groupSeparator + workingBalance.slice((workingBalance.length - 11), workingBalance.length);
-
-                                }
-
-                            }
-
-                        break;
-
-                        case 2:
-
-                            workingBalance = (workingBalanceFigure / 10).toString();
-                            workingBalance = workingBalance.slice(0, (workingBalance.length - decimalPlaces)) + decimalSeparator + workingBalance.slice((workingBalance.length - decimalPlaces), workingBalance.length);
-
-                            // place group separators
-                            if (workingBalance.length > 6) {
-
-                                workingBalance = workingBalance.slice(0, (workingBalance.length - 6)) + groupSeparator + workingBalance.slice((workingBalance.length - 6), workingBalance.length);
-
-                                if (workingBalance.length > 10) workingBalance = workingBalance.slice(0, (workingBalance.length - 10)) + groupSeparator + workingBalance.slice((workingBalance.length - 10), workingBalance.length);
-
-                            }
-
-                        break;
-
-                        case 3:
-
-                            workingBalance = (workingBalanceFigure).toString();
-                            workingBalance = workingBalance.slice(0, (workingBalance.length - decimalPlaces)) + decimalSeparator + workingBalance.slice((workingBalance.length - decimalPlaces), workingBalance.length);
-
-                            // place group separators
-                            if (workingBalance.length > 7) {
-
-                                workingBalance = workingBalance.slice(0, (workingBalance.length - 7)) + groupSeparator + workingBalance.slice((workingBalance.length - 7), workingBalance.length);
-
-                                if (workingBalance.length > 11) workingBalance = workingBalance.slice(0, (workingBalance.length - 11)) + groupSeparator + workingBalance.slice((workingBalance.length - 11), workingBalance.length);
-
-                            }
-
-                    }
-
-                    if (putBackMinusSign) workingBalance = "-" + currencySymbol[0] + workingBalance + currencySymbol[1];
-                    else workingBalance = currencySymbol[0] + workingBalance + currencySymbol[1];
-                    putBackMinusSign = false;
-
-                }
-
-                if (clearedBalanceFigure === 0) {
-
-                    switch (decimalPlaces) {
-
-                    case 0:
-                        clearedBalance = currencySymbol[0] + "0" + currencySymbol[1];
-                        break;
-                    case 2:
-                        clearedBalance = currencySymbol[0] + "0.00" + currencySymbol[1];
-                        break;
-                    case 3:
-                        clearedBalance = currencySymbol[0] + "0.000" + currencySymbol[1];
-
-                    }
-
-                }
-
-                else {
-
-                    if (clearedBalanceFigure < 0) {
-
-                        putBackMinusSign = true;
-                        clearedBalanceFigure = clearedBalanceFigure * -1;
-
-                    }
-
-                    switch (decimalPlaces) {
-
-                        case 0:
-
-                            clearedBalance = (clearedBalanceFigure / 10).toString();
-
-                            // place group separators
-                            if (clearedBalance.length > 3) {
-
-                                clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 3)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 3), clearedBalance.length);
-
-                                if (clearedBalance.length > 7) {
-
-                                    clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 7)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 7), clearedBalance.length);
-
-                                    if (clearedBalance.length > 11) clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 11)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 11), clearedBalance.length);
-
-                                }
-
-                            }
-
-                        break;
-
-                        case 2:
-
-                            clearedBalance = (clearedBalanceFigure / 10).toString();
-                            clearedBalance = clearedBalance.slice(0, (clearedBalance.length - decimalPlaces)) + decimalSeparator + clearedBalance.slice((clearedBalance.length - decimalPlaces), clearedBalance.length);
-
-                            // place group separators
-                            if (clearedBalance.length > 6) {
-
-                                clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 6)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 6), clearedBalance.length);
-
-                                if (clearedBalance.length > 10) clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 10)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 10), clearedBalance.length);
-
-                            }
-
-                        break;
-
-                        case 3:
-
-                            clearedBalance = (clearedBalanceFigure).toString();
-                            clearedBalance = clearedBalance.slice(0, (clearedBalance.length - decimalPlaces)) + decimalSeparator + clearedBalance.slice((clearedBalance.length - decimalPlaces), clearedBalance.length);
-
-                            // place group separators
-                            if (clearedBalance.length > 7) {
-
-                                clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 7)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 7), clearedBalance.length);
-
-                                if (clearedBalance.length > 11) clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 11)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 11), clearedBalance.length);
-
-                            }
-
-                    }
-
-                    if (putBackMinusSign) clearedBalance = "-" + currencySymbol[0] + clearedBalance + currencySymbol[1];
-                    else clearedBalance = currencySymbol[0] + clearedBalance + currencySymbol[1];
-
-                }
-
-            });
-
-        }
-
-        recentsListView.forceLayout();
 
     }
 
@@ -352,246 +226,112 @@ Page {
 
                                             dateFormat = dateFormat.replace(/DD/, "dd");
                                             dateFormat = dateFormat.replace(/YYYY/, "yyyy");
+                                            var shortDateFormat = dateFormat.replace(/yyyy/, "yy");
+
                                             var recentTransactionList = JSON.parse(o.responseText);
-                                            recentTransactionsModel.clear();
 
-                                            var j = recentTransactionList.data.transactions.length;
+                                            if (o.status === 200) {
 
-                                            for (var i = 0; i < recentTransactionList.data.transactions.length; i++) {
+                                                recentTransactionsModel.clear();
 
-                                                j--;
+                                                var j = recentTransactionList.data.transactions.length;
 
-                                                recentsDate[j] = Qt.formatDate(recentTransactionList.data.transactions[i].date, dateFormat);
-                                                recentsPayee[j] = recentTransactionList.data.transactions[i].payee_name;
-                                                recentsCategory[j] = recentTransactionList.data.transactions[i].category_name;
+                                                for (var i = 0; i < recentTransactionList.data.transactions.length; i++) {
 
-                                                if (recentTransactionList.data.transactions[i].amount >= 0) {
+                                                    j--;
 
-                                                    recentsInflow[j] = currencySymbol[0] + ((recentTransactionList.data.transactions[i].amount / 1000).toFixed(2)) + currencySymbol[1];
-                                                    recentsOutflow[j] = "";
+                                                    recentsDate[j] = Qt.formatDate(recentTransactionList.data.transactions[i].date, dateFormat);
+                                                    recentsDateShort[j] = Qt.formatDate(recentTransactionList.data.transactions[i].date, shortDateFormat);
+                                                    recentsPayee[j] = recentTransactionList.data.transactions[i].payee_name;
+                                                    recentsCategory[j] = recentTransactionList.data.transactions[i].category_name;
+
+                                                    if (recentTransactionList.data.transactions[i].amount >= 0) {
+
+                                                        recentsInflow[j] = formatFigure(recentTransactionList.data.transactions[i].amount);
+                                                        recentsOutflow[j] = "";
+
+                                                    }
+
+                                                    else {
+
+                                                        recentsOutflow[j] = formatFigure(recentTransactionList.data.transactions[i].amount * -1);
+                                                        recentsInflow[j] = "";
+
+                                                    }
+
+                                                    if (recentTransactionList.data.transactions[i].cleared === "cleared" || recentTransactionList.data.transactions[i].cleared === "reconciled") recentsUncleared[j] = false;
+                                                    else recentsUncleared[j] = true;
+
+                                                    if (settings.recentsOldToNew === true) {
+
+                                                        recentTransactionsModel.append({ dateShort: recentsDateShort[j], date: recentsDate[j], payee: recentsPayee[j], category: recentsCategory[j], inflow: recentsInflow[j], outflow: recentsOutflow[j], uncleared: recentsUncleared[j] });
+
+                                                    }
 
                                                 }
 
-                                                else {
+                                                if (settings.recentsOldToNew === false) {
 
-                                                    recentsOutflow[j] = currencySymbol[0] + ((recentTransactionList.data.transactions[i].amount / -1000).toFixed(2)) + currencySymbol[1];
-                                                    recentsInflow[j] = "";
+                                                    for (var k = 0; k < recentTransactionList.data.transactions.length; k++) {
+
+                                                        recentTransactionsModel.append({ dateShort: recentsDateShort[k], date: recentsDate[k], payee: recentsPayee[k], category: recentsCategory[k], inflow: recentsInflow[k], outflow: recentsOutflow[k], uncleared: recentsUncleared[k] });
+
+                                                    }
+
+                                                }
+
+                                                if (settings.recentsShowBalances) {
+
+                                                    loadAccountBalances('https://api.youneedabudget.com/v1/budgets/' + settings.defaultBudget + '/accounts/' + accountID[chosenRecentsAccount], function (o) {
+
+                                                        var accountBalances = JSON.parse(o.responseText);
+
+                                                        if (o.status === 200) {
+
+                                                            workingBalance = formatFigure(accountBalances.data.account.balance);
+                                                            clearedBalance = formatFigure(accountBalances.data.account.cleared_balance);
+                                                            clearedBalanceFigureLabel.text = "";
+                                                            clearedBalanceFigureLabel.text = clearedBalance;
+                                                            workingBalanceFigureLabel.text = "";
+                                                            workingBalanceFigureLabel.text = workingBalance;
+
+                                                        }
+
+                                                        else if (o.status === 401 || o.status === 403) {
+
+                                                            needNewKey();
+
+                                                        }
+
+                                                        else {
+
+                                                            unknownError.previewSummary = "Unknown Error - Unable to Load Account Balances";
+                                                            unknownError.publish();
+
+                                                        }
+
+                                                    });
 
                                                 }
 
-                                                if (recentTransactionList.data.transactions[i].cleared === "cleared" || recentTransactionList.data.transactions[i].cleared === "reconciled") recentsUncleared[j] = false;
-                                                else recentsUncleared[j] = true;
-
-                                                if (settings.recentsOldToNew === true) {
-
-                                                    recentTransactionsModel.append({ date: recentsDate[j], payee: recentsPayee[j], category: recentsCategory[j], inflow: recentsInflow[j], outflow: recentsOutflow[j], uncleared: recentsUncleared[j] });
-
-                                                }
+                                                recentsListView.forceLayout();
 
                                             }
 
-                                            if (settings.recentsOldToNew === false) {
+                                            else if (o.status === 401 || o.status === 403) {
 
-                                                for (var k = 0; k < recentTransactionList.data.transactions.length; k++) {
+                                                needNewKey();
 
-                                                    recentTransactionsModel.append({ date: recentsDate[k], payee: recentsPayee[k], category: recentsCategory[k], inflow: recentsInflow[k], outflow: recentsOutflow[k], uncleared: recentsUncleared[k] });
+                                            }
 
-                                                }
+                                            else {
+
+                                                unknownError.previewSummary = "Unknown Error - Unable to Load Transactions";
+                                                unknownError.publish();
 
                                             }
 
                                         });
-
-                                        balancesRow.visible = false;
-
-                                        if (settings.recentsShowBalances) {
-
-                                            loadAccountBalances('https://api.youneedabudget.com/v1/budgets/' + settings.defaultBudget + '/accounts/' + accountID[chosenRecentsAccount], function (o) {
-
-                                                var accountBalances = JSON.parse(o.responseText);
-                                                var workingBalanceFigure = accountBalances.data.account.balance;
-                                                var clearedBalanceFigure = accountBalances.data.account.cleared_balance;
-                                                var putBackMinusSign = false;
-
-                                                if (workingBalanceFigure === 0) {
-
-                                                    switch (decimalPlaces) {
-
-                                                    case 0:
-                                                        workingBalance = currencySymbol[0] + "0" + currencySymbol[1];
-                                                        break;
-                                                    case 2:
-                                                        workingBalance = currencySymbol[0] + "0.00" + currencySymbol[1];
-                                                        break;
-                                                    case 3:
-                                                        workingBalance = currencySymbol[0] + "0.000" + currencySymbol[1];
-
-                                                    }
-
-                                                }
-
-                                                else {
-
-                                                    if (workingBalanceFigure < 0) {
-
-                                                        putBackMinusSign = true;
-                                                        workingBalanceFigure = workingBalanceFigure * -1;
-
-                                                    }
-
-                                                    switch (decimalPlaces) {
-
-                                                        case 0:
-
-                                                            workingBalance = (workingBalanceFigure / 10).toString();
-
-                                                            // place group separators
-                                                            if (workingBalance.length > 3) {
-
-                                                                workingBalance = workingBalance.slice(0, (workingBalance.length - 3)) + groupSeparator + workingBalance.slice((workingBalance.length - 3), workingBalance.length);
-
-                                                                if (workingBalance.length > 7) {
-
-                                                                    workingBalance = workingBalance.slice(0, (workingBalance.length - 7)) + groupSeparator + workingBalance.slice((workingBalance.length - 7), workingBalance.length);
-
-                                                                    if (workingBalance.length > 11) workingBalance = workingBalance.slice(0, (workingBalance.length - 11)) + groupSeparator + workingBalance.slice((workingBalance.length - 11), workingBalance.length);
-
-                                                                }
-
-                                                            }
-
-                                                        break;
-
-                                                        case 2:
-
-                                                            workingBalance = (workingBalanceFigure / 10).toString();
-                                                            workingBalance = workingBalance.slice(0, (workingBalance.length - decimalPlaces)) + decimalSeparator + workingBalance.slice((workingBalance.length - decimalPlaces), workingBalance.length);
-
-                                                            // place group separators
-                                                            if (workingBalance.length > 6) {
-
-                                                                workingBalance = workingBalance.slice(0, (workingBalance.length - 6)) + groupSeparator + workingBalance.slice((workingBalance.length - 6), workingBalance.length);
-
-                                                                if (workingBalance.length > 10) workingBalance = workingBalance.slice(0, (workingBalance.length - 10)) + groupSeparator + workingBalance.slice((workingBalance.length - 10), workingBalance.length);
-
-                                                            }
-
-                                                        break;
-
-                                                        case 3:
-
-                                                            workingBalance = (workingBalanceFigure).toString();
-                                                            workingBalance = workingBalance.slice(0, (workingBalance.length - decimalPlaces)) + decimalSeparator + workingBalance.slice((workingBalance.length - decimalPlaces), workingBalance.length);
-
-                                                            // place group separators
-                                                            if (workingBalance.length > 7) {
-
-                                                                workingBalance = workingBalance.slice(0, (workingBalance.length - 7)) + groupSeparator + workingBalance.slice((workingBalance.length - 7), workingBalance.length);
-
-                                                                if (workingBalance.length > 11) workingBalance = workingBalance.slice(0, (workingBalance.length - 11)) + groupSeparator + workingBalance.slice((workingBalance.length - 11), workingBalance.length);
-
-                                                            }
-
-                                                    }
-
-                                                    if (putBackMinusSign) workingBalance = "-" + currencySymbol[0] + workingBalance + currencySymbol[1];
-                                                    else workingBalance = currencySymbol[0] + workingBalance + currencySymbol[1];
-                                                    putBackMinusSign = false;
-
-                                                }
-
-                                                if (clearedBalanceFigure === 0) {
-
-                                                    switch (decimalPlaces) {
-
-                                                    case 0:
-                                                        clearedBalance = currencySymbol[0] + "0" + currencySymbol[1];
-                                                        break;
-                                                    case 2:
-                                                        clearedBalance = currencySymbol[0] + "0.00" + currencySymbol[1];
-                                                        break;
-                                                    case 3:
-                                                        clearedBalance = currencySymbol[0] + "0.000" + currencySymbol[1];
-
-                                                    }
-
-                                                }
-
-                                                else {
-
-                                                    if (clearedBalanceFigure < 0) {
-
-                                                        putBackMinusSign = true;
-                                                        clearedBalanceFigure = clearedBalanceFigure * -1;
-
-                                                    }
-
-                                                    switch (decimalPlaces) {
-
-                                                        case 0:
-
-                                                            clearedBalance = (clearedBalanceFigure / 10).toString();
-
-                                                            // place group separators
-                                                            if (clearedBalance.length > 3) {
-
-                                                                clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 3)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 3), clearedBalance.length);
-
-                                                                if (clearedBalance.length > 7) {
-
-                                                                    clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 7)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 7), clearedBalance.length);
-
-                                                                    if (clearedBalance.length > 11) clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 11)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 11), clearedBalance.length);
-
-                                                                }
-
-                                                            }
-
-                                                        break;
-
-                                                        case 2:
-
-                                                            clearedBalance = (clearedBalanceFigure / 10).toString();
-                                                            clearedBalance = clearedBalance.slice(0, (clearedBalance.length - decimalPlaces)) + decimalSeparator + clearedBalance.slice((clearedBalance.length - decimalPlaces), clearedBalance.length);
-
-                                                            // place group separators
-                                                            if (clearedBalance.length > 6) {
-
-                                                                clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 6)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 6), clearedBalance.length);
-
-                                                                if (clearedBalance.length > 10) clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 10)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 10), clearedBalance.length);
-
-                                                            }
-
-                                                        break;
-
-                                                        case 3:
-
-                                                            clearedBalance = (clearedBalanceFigure).toString();
-                                                            clearedBalance = clearedBalance.slice(0, (clearedBalance.length - decimalPlaces)) + decimalSeparator + clearedBalance.slice((clearedBalance.length - decimalPlaces), clearedBalance.length);
-
-                                                            // place group separators
-                                                            if (clearedBalance.length > 7) {
-
-                                                                clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 7)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 7), clearedBalance.length);
-
-                                                                if (clearedBalance.length > 11) clearedBalance = clearedBalance.slice(0, (clearedBalance.length - 11)) + groupSeparator + clearedBalance.slice((clearedBalance.length - 11), clearedBalance.length);
-
-                                                            }
-
-                                                    }
-
-                                                    if (putBackMinusSign) clearedBalance = "-" + currencySymbol[0] + clearedBalance + currencySymbol[1];
-                                                    else clearedBalance = currencySymbol[0] + clearedBalance + currencySymbol[1];
-
-                                                }
-
-                                            });
-
-                                        }
-
-                                        if (settings.recentsShowBalances && page.isPortrait) balancesRow.visible = true; // (hopefully) force redraw of balances
-                                        recentsListView.forceLayout();
 
                                     }
 
@@ -612,29 +352,14 @@ Page {
                 id: balancesRow
                 width: parent.width
                 spacing: Theme.paddingSmall
-                x: Theme.paddingSmall * 2.5
+                x: Theme.horizontalPageMargin
                 visible: isPortrait ? settings.recentsShowBalances ? true : false : false
-
-                Component.onCompleted: {
-
-                    if (currencySymbol[4].length > 1 || workingBalance.length > 8 || clearedBalance.length > 8) {
-
-                        clearedBalanceLabel.text = "Cleared:";
-                        clearedBalanceLabel.width = parent.width * 0.2 - (Theme.paddingSmall * 2);
-                        clearedBalanceFigureLabel.width = parent.width * 0.3 - (Theme.paddingSmall * 5);
-                        workingBalanceLabel.text = "Working:";
-                        workingBalanceLabel.width = parent.width * 0.2 - (Theme.paddingSmall * 5);
-                        workingBalanceFigureLabel.width = parent.width * 0.3 - (Theme.paddingSmall * 2);
-
-                    }
-
-                }
 
                 Label {
 
                     id: clearedBalanceLabel
-                    width: parent.width * 0.3 - (Theme.paddingSmall * 2)
-                    text: "Cleared Balance:"
+                    width: parent.width * 0.25 - (Theme.horizontalPageMargin)
+                    text: "Cleared:"
                     font.pixelSize: Theme.fontSizeExtraSmall
                     bottomPadding: Theme.paddingMedium
 
@@ -643,7 +368,7 @@ Page {
                 Label {
 
                     id: clearedBalanceFigureLabel
-                    width: parent.width * 0.2 - (Theme.paddingSmall * 5)
+                    width: parent.width * 0.25 - (Theme.paddingSmall * 4)
                     horizontalAlignment: Text.AlignRight
                     text: clearedBalance
                     font.pixelSize: Theme.fontSizeExtraSmall
@@ -654,10 +379,11 @@ Page {
                 Label {
 
                     text: " | "
-                    width: Theme.paddingSmall * 5
+                    width: Theme.paddingSmall * 4
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                     font.pixelSize: Theme.fontSizeExtraSmall
+                    color: Theme.secondaryColor
                     bottomPadding: Theme.paddingMedium
 
                 }
@@ -665,8 +391,8 @@ Page {
                 Label {
 
                     id: workingBalanceLabel
-                    width: parent.width * 0.3 - (Theme.paddingSmall * 5)
-                    text: "Working Balance:"
+                    width: parent.width * 0.25 - (Theme.horizontalPageMargin)
+                    text: "Working:"
                     font.pixelSize: Theme.fontSizeExtraSmall
                     bottomPadding: Theme.paddingMedium
 
@@ -675,7 +401,7 @@ Page {
                 Label {
 
                     id: workingBalanceFigureLabel
-                    width: parent.width * 0.2 - (Theme.paddingSmall * 2)
+                    width: parent.width * 0.25 - (Theme.paddingSmall * 4)
                     horizontalAlignment: Text.AlignRight
                     text: workingBalance
                     font.pixelSize: Theme.fontSizeExtraSmall
@@ -689,13 +415,13 @@ Page {
 
                 id: balancesDividerRow
                 width: parent.width
-                x: Theme.paddingSmall
+                x: Theme.horizontalPageMargin
                 visible: isPortrait ? settings.recentsShowBalances ? true : false : false
 
                 Separator {
 
                     horizontalAlignment: Qt.AlignHCenter
-                    width: parent.width - (Theme.paddingSmall * 2)
+                    width: parent.width - (Theme.horizontalPageMargin)
                     primaryColor: Theme.primaryColor
 
                 }
@@ -704,17 +430,17 @@ Page {
 
             Row {
 
-                width: parent.width
+                width: parent.width - (Theme.horizontalPageMargin * 2)
                 spacing: Theme.paddingSmall
                 id: recentsHeaderRow
-                x: isPortrait ?  Theme.paddingSmall * 2.5 : Theme.paddingSmall * 3
+                x: Theme.horizontalPageMargin
 
                 Label {
 
                     text: "Date"
                     font.pixelSize: isPortrait ? Theme.fontSizeExtraSmall : Theme.fontSizeSmall
                     color: Theme.secondaryColor
-                    width: isPortrait ? (parent.width * 0.22) - (Theme.paddingSmall * 2) : (parent.width * 0.16) - (Theme.paddingSmall * 2)
+                    width: isPortrait ? parent.width * 0.18 : parent.width * 0.14
                     topPadding: Theme.paddingSmall
                     bottomPadding: Theme.paddingSmall
 
@@ -725,7 +451,7 @@ Page {
                     text: "Payee"
                     font.pixelSize: isPortrait ? Theme.fontSizeExtraSmall : Theme.fontSizeSmall
                     color: Theme.secondaryColor
-                    width: isPortrait ? (parent.width * 0.38) - (Theme.paddingSmall * 2) : (parent.width * 0.28) - (Theme.paddingSmall * 2)
+                    width: isPortrait ? (parent.width * 0.4) - Theme.paddingSmall : (parent.width * 0.27) - Theme.paddingSmall
                     topPadding: Theme.paddingSmall
                     bottomPadding: Theme.paddingSmall
 
@@ -737,7 +463,7 @@ Page {
                     visible: isPortrait ? false : true
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.secondaryColor
-                    width: parent.width * 0.28 - Theme.paddingSmall * 2
+                    width: parent.width * 0.27 - Theme.paddingSmall
                     topPadding: Theme.paddingSmall
                     bottomPadding: Theme.paddingSmall
 
@@ -749,7 +475,7 @@ Page {
                     font.pixelSize: isPortrait ? Theme.fontSizeExtraSmall : Theme.fontSizeSmall
                     color: Theme.secondaryColor
                     horizontalAlignment: "AlignRight"
-                    width: isPortrait ? (parent.width * 0.2) - (Theme.paddingSmall * 2) : (parent.width * 0.14) - (Theme.paddingSmall * 2)
+                    width: isPortrait ? (parent.width * 0.21) - Theme.paddingSmall : parent.width * 0.16 - Theme.paddingSmall
                     topPadding: Theme.paddingSmall
                     bottomPadding: Theme.paddingSmall
 
@@ -761,7 +487,7 @@ Page {
                     font.pixelSize: isPortrait ? Theme.fontSizeExtraSmall : Theme.fontSizeSmall
                     color: Theme.secondaryColor
                     horizontalAlignment: "AlignRight"
-                    width: isPortrait ? (parent.width * 0.2) - (Theme.paddingSmall * 2) : (parent.width * 0.14) - (Theme.paddingSmall * 2)
+                    width: isPortrait ? (parent.width * 0.21) - Theme.paddingSmall : parent.width * 0.16 - Theme.paddingSmall
                     topPadding: Theme.paddingSmall
                     bottomPadding: Theme.paddingSmall
 
@@ -775,22 +501,22 @@ Page {
                 height: isPortrait ? settings.recentsShowBalances ? page.height - recentsPageHeader.height - accountBoxRow.height - balancesRow.height - balancesDividerRow.height - recentsHeaderRow.height - Theme.paddingMedium : page.height - recentsPageHeader.height - accountBoxRow.height - recentsHeaderRow.height - Theme.paddingMedium : page.height - recentsHeaderRow.height - Theme.paddingMedium
                 id: recentsListView
                 model: recentTransactionsModel
-                spacing: isPortrait ? Theme.paddingSmall : Theme.paddingSmall
+                spacing: Theme.paddingSmall
                 VerticalScrollDecorator{flickable: recentsListView}
 
                 delegate: Row {
 
-                    width: parent.width
+                    width: parent.width - (Theme.horizontalPageMargin * 2)
                     spacing: Theme.paddingSmall
-                    x: isPortrait ? Theme.paddingSmall * 2.5 : Theme.paddingSmall * 3
+                    x: Theme.horizontalPageMargin
 
                     Label {
 
-                        text: date
+                        text: isPortrait ? dateShort : date
                         font.pixelSize: isPortrait ? Theme.fontSizeExtraSmall : Theme.fontSizeSmall
                         font.bold: uncleared
                         truncationMode: TruncationMode.Fade
-                        width: isPortrait ? (parent.width * 0.22) - (Theme.paddingSmall * 2) : (parent.width * 0.16) - (Theme.paddingSmall * 2)
+                        width: isPortrait ? parent.width * 0.18 : parent.width * 0.14
 
                     }
 
@@ -800,7 +526,7 @@ Page {
                         font.pixelSize: isPortrait ? Theme.fontSizeExtraSmall : Theme.fontSizeSmall
                         font.bold: uncleared
                         truncationMode: TruncationMode.Fade
-                        width: isPortrait ? (parent.width * 0.38) - (Theme.paddingSmall * 2) : (parent.width * 0.28) - (Theme.paddingSmall * 2)
+                        width: isPortrait ? (parent.width * 0.4) - Theme.paddingSmall : (parent.width * 0.27) - Theme.paddingSmall
 
                     }
 
@@ -811,7 +537,7 @@ Page {
                         font.pixelSize: isPortrait ? Theme.fontSizeExtraSmall : Theme.fontSizeSmall
                         font.bold: uncleared
                         truncationMode: TruncationMode.Fade
-                        width: parent.width * 0.28 - Theme.paddingSmall * 2
+                        width: parent.width * 0.27 - Theme.paddingSmall
 
                     }
 
@@ -822,7 +548,7 @@ Page {
                         font.bold: uncleared
                         truncationMode: TruncationMode.Fade
                         horizontalAlignment: "AlignRight"
-                        width: isPortrait ? (parent.width * 0.2) - (Theme.paddingSmall * 2) : (parent.width * 0.14) - (Theme.paddingSmall * 2)
+                        width: isPortrait ? (parent.width * 0.21) - Theme.paddingSmall : parent.width * 0.16 - Theme.paddingSmall
 
                     }
 
@@ -833,7 +559,7 @@ Page {
                         font.bold: uncleared
                         truncationMode: TruncationMode.Fade
                         horizontalAlignment: "AlignRight"
-                        width: isPortrait ? (parent.width * 0.2) - (Theme.paddingSmall * 2) : (parent.width * 0.14) - (Theme.paddingSmall * 2)
+                        width: isPortrait ? (parent.width * 0.21) - Theme.paddingSmall : parent.width * 0.16 - Theme.paddingSmall
 
                     }
 
@@ -841,7 +567,24 @@ Page {
 
             }
 
+            Row {
+
+                id: gapRow
+                width: parent.width
+                height: Theme.paddingMedium
+
+            }
+
         }
+
+    }
+
+    Notification {
+
+        id: unknownError
+        isTransient: true
+        expireTimeout: 2500
+        appName: "AddBuy"
 
     }
 
@@ -855,19 +598,7 @@ Page {
 
                 if (myxhr.readyState === 4) {
 
-                    callback(myxhr);
-
-                    if (recentTransactionListFromServer.status === 200) {
-
-                        // Transactions should load without any problems.
-
-                    }
-
-                    else {
-
-                        // Recent Transactions gather attempt unsuccessful. Need response code and error handling.
-
-                    }
+                    callback(myxhr); // http status errors hanlded in above code when function is called.
 
                 }
 
@@ -880,44 +611,6 @@ Page {
         recentTransactionListFromServer.setRequestHeader("Accept", "application/json");
         recentTransactionListFromServer.setRequestHeader("Authorization", "Bearer " + settings.accessKey);
         recentTransactionListFromServer.send('');
-
-    }
-
-    function loadAccountBalances(url, callback) {
-
-        var accountBalancesFromServer = new XMLHttpRequest();
-
-        accountBalancesFromServer.onreadystatechange = (function(myxhr) {
-
-            return function() {
-
-                if (myxhr.readyState === 4) {
-
-                    callback(myxhr);
-
-                    if (accountBalancesFromServer.status === 200) {
-
-                        // Account balances gathered successfully
-
-                    }
-
-                    else {
-
-                        // Need response code and error handling.
-
-                    }
-
-                }
-
-            }
-
-        })(accountBalancesFromServer);
-
-        accountBalancesFromServer.open('GET', url);
-        accountBalancesFromServer.setRequestHeader("Content-Type", "application/json");
-        accountBalancesFromServer.setRequestHeader("Accept", "application/json");
-        accountBalancesFromServer.setRequestHeader("Authorization", "Bearer " + settings.accessKey);
-        accountBalancesFromServer.send('');
 
     }
 
