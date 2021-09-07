@@ -1,32 +1,39 @@
 <h1>AddBuy for YNAB</h1>
 
+Version 0.2
+
 A simple transaction-entry app for YNAB on Sailfish OS.
 
 Privacy Policy: https://www.websitepolicies.com/policies/view/W6aKgySZ
 
-Intended mainly for on-the-spot purchases. For users who generally do most of the budgeting work in YNAB on a laptop or desktop and mainly use their mobile app for recording transactions (if they're not already synced with bank).
+Intended mainly for on-the-spot purchases. For a user who would generally do most of their YNAB budgeting work on a laptop or desktop and mainly use their mobile app for recording transactions (if they're not already synced with bank).
 
-When choosing category, as long as the payee already exists (and was assigned a category), leaving the field as Default will assign the last category used with that payee. If entering a new payee, user will need to select a category to avoid this field being empty when saving.
+App icon by <a href="https://github.com/JSEHV">JSEHV</a>. Thanks for the contribution!
 
-Still in early development.
+Requires a YNAB account (paid service, free trial available).
 
-<h3>Rationale:</h3>
+<h3>Rationale</h3>
 
 - Android version of YNAB is incompatible with Alien Dalvik on Sony Xperia X.
 - Overall positive to have more native SFOS apps.
-- Consistency of Ambience, lack of need for Android support, possibly extending battery life, etc. among reasons for models later than Xperia X.
+- Useful also in learning my way around Qt/QML programming.
 
-<h3>(Incomplete) to-do list:</h3>
+<h3>Limitations</h3>
+
+- User will need to reauthorize every two hours. Might look into adding a server-side solution later to avoid this (will need to get acquainted with node.js etc in order to do so). Will not be adding any kind of PAK (personal access key) option, even in advanced/developer settings, as this goes beyond the acceptable use of the API.
+- When selecting a default budget and account upon first using the app, user will need to select each from the menu, even if their preferred option is pre-selected, in order to continue.
+- When choosing a category for a transaction, as long as the payee already exists (and was assigned a category), leaving the field as Default will assign the last category used with that payee. If entering a new payee, user will need to select a category to avoid leaving this field empty when saving.
+
+<h3>To-do</h3>
 
 - More thorough network error handling.
-- Add cover page feature, possibly working or cleared balance, or remaning balance in a given category.
-- Add page on which user can setup OAuth and add accompanying OAuth code. Will need Sailfish Secrets implementation for access keys, whether it's OAuth or a possible option for user to use their own PAK to avoid timing out. Will include disclaimer if PAK option is available (i.e. this isn't me asking for your PAK!)
-- Under the hood, will probably migrate existing XHttpRequest code (all connections other than saving transaction POST) to the C++ class for consistency and performance. C++ class was created due to blank page issue with POST request using XHttpRequest method.
-- Cleanup and/or tighten code when formatting main figure box on New Transaction page and in other areas.
+- Method to notify user if transaction that was just saved puts category balance in the red (aligning more with the purpose of using YNAB).
 - May be able to edit New Transaction page so that user doesn't have to restart app if switching to a different budget.
 
-<h3>Further down the road:</h3>
+<h3>Support my work</h3>
 
-- Method to notify user if transaction just saved puts category balance in the red (kind of essential to be associated with the YNAB service).
-- Possible option to select and edit recent transactions (only in landscape as the type would be too small in portrait) and budget amounts.
-- Possible option to enter income transactions, although not the primary intended use of the app and would add some clutter to New Transaction page.
+- <a href="https://buymeacoffee.com/michaeljb">Buy Me A Coffee</a>
+- <a href="https://ko-fi.com/michaeljb">Support me on Ko-fi</a>
+- <a href="https://paypal.me/michaeljohnbarrett">PayPal.me</a>
+
+Feel free to leave feedback or contact at michael@mjbdev.net
