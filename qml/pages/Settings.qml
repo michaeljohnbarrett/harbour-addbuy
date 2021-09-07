@@ -1,10 +1,72 @@
 import QtQuick 2.2
 import Sailfish.Silica 1.0
+import Nemo.Notifications 1.0
 
 Page {
 
     id: page
     allowedOrientations: Orientation.PortraitMask
+
+    Component.onCompleted: {
+
+        var selectedNotFound1 = true;
+        var selectedNotFound2 = true;
+        var defaultAccountWorking = 0;
+        var defaultAccountCleared = 1;
+
+        for (var i = 0; i < coverBalComboModel.count; i++) {
+
+            if (settings.coverBalance1[1] === coverBalComboModel.get(i).uuid && settings.coverBalance1[2] === coverBalComboModel.get(i).account && settings.coverBalance1[3] === coverBalComboModel.get(i).cleared) {
+
+                coverBalance1Combo.currentIndex = i;
+                selectedNotFound1 = false;
+
+            }
+
+            if (settings.coverBalance2[1] === coverBalComboModel.get(i).uuid && settings.coverBalance2[2] === coverBalComboModel.get(i).account && settings.coverBalance2[3] === coverBalComboModel.get(i).cleared) {
+
+                coverBalance2Combo.currentIndex = i;
+                selectedNotFound2 = false;
+
+            }
+
+            if (settings.defaultAccount === coverBalComboModel.get(i).uuid && coverBalComboModel.get(i).cleared === false) {
+
+                defaultAccountWorking = i;
+
+            }
+
+            if (settings.defaultAccount === coverBalComboModel.get(i).uuid && coverBalComboModel.get(i).cleared === true) {
+
+                defaultAccountCleared = i;
+
+            }
+
+        }
+
+        if (selectedNotFound1) { // default account - working
+
+            settings.coverBalance1[0] = coverBalComboModel.get(defaultAccountWorking).title;
+            settings.coverBalance1[1] = coverBalComboModel.get(defaultAccountWorking).uuid;
+            settings.coverBalance1[2] = coverBalComboModel.get(defaultAccountWorking).account;
+            settings.coverBalance1[3] = coverBalComboModel.get(defaultAccountWorking).cleared;
+            settings.sync();
+            coverBalance1Combo.currentIndex = defaultAccountWorking;
+
+        }
+
+        if (selectedNotFound2) { // default account - cleared
+
+            settings.coverBalance2[0] = coverBalComboModel.get(defaultAccountCleared).title;
+            settings.coverBalance2[1] = coverBalComboModel.get(defaultAccountCleared).uuid;
+            settings.coverBalance2[2] = coverBalComboModel.get(defaultAccountCleared).account;
+            settings.coverBalance2[3] = coverBalComboModel.get(defaultAccountCleared).cleared;
+            settings.sync();
+            coverBalance2Combo.currentIndex = defaultAccountCleared;
+
+        }
+
+    }
 
     SilicaFlickable {
 
@@ -58,34 +120,57 @@ Page {
                                     loadAccountDataForMenu('https://api.youneedabudget.com/v1/budgets/' + settings.defaultBudget + '/accounts', function (o) {
 
                                         var accountList = JSON.parse(o.responseText);
-                                        var j = 0;
-                                        var defaultAccountAssigned = false;
-                                        accountsModel.clear();
-                                        accountName = null;
-                                        accountName = ["string"];
-                                        accountID = null;
-                                        accountID = ["string"];
 
-                                        for (var i = 0; i < accountList.data.accounts.length; i++) {
+                                        if (o.status === 200) {
 
-                                            if (accountList.data.accounts[i].closed === false) {
+                                            var j = 0;
+                                            var defaultAccountAssigned = false;
+                                            accountsModel.clear();
+                                            accountName = null;
+                                            accountName = ["string"];
+                                            accountID = null;
+                                            accountID = ["string"];
 
-                                                accountName[j] = accountList.data.accounts[i].name;
-                                                accountID[j] = accountList.data.accounts[i].id;
-                                                accountsModel.append({"title": accountName[j], "uuid": accountID[j]});
-                                                j = j + 1;
+                                            for (var i = 0; i < accountList.data.accounts.length; i++) {
+
+                                                if (accountList.data.accounts[i].closed === false) {
+
+                                                    accountName[j] = accountList.data.accounts[i].name;
+                                                    accountID[j] = accountList.data.accounts[i].id;
+                                                    accountsModel.append({"title": accountName[j], "uuid": accountID[j]});
+                                                    j = j + 1;
+
+                                                }
 
                                             }
 
+                                            accountCombo.enabled = true;
+                                            accountCombo.currentIndex = 0;
+                                            accountCombo.description = qsTr("Please select a default account, then quit and reopen app to complete switch.");
+                                            loadingAccountsBusy.running = false;
+
                                         }
 
-                                        accountCombo.enabled = true;
-                                        accountCombo.currentIndex = 0;
-                                        loadingAccountsBusy.running = false;
+                                        else if (o.status === 401 || o.status === 403) {
+
+                                            needNewKey();
+
+                                        }
+
+                                        else if (o.status === 503) { // need to add different handling for this status
+
+                                            needNewKey();
+
+                                        }
+
+                                        else {
+
+                                            settingsNotification.previewSummary = "Error Loading Accounts - Please Re-access Page"
+                                            settingsNotification.publish();
+
+                                        }
 
                                     });
-
-                                    restartAppLabel.visible = true;
 
                                 }
 
@@ -96,19 +181,6 @@ Page {
                     }
 
                 }
-
-            }
-
-            Label {
-
-                visible: false
-                id: restartAppLabel
-                width: parent.width
-                topPadding: 0
-                leftPadding: recentsOldToNewSwitch.leftMargin
-                text: qsTr("Please select a default account, then quit and reopen app to complete switch.")
-                wrapMode: Text.Wrap
-                font.pixelSize: Theme.fontSizeExtraSmall
 
             }
 
@@ -247,9 +319,10 @@ Page {
 
             TextSwitch {
 
-                text: qsTr("Load currently selected account on main page instead of default")
+                text: qsTr("Selected account overrides default")
                 id: defaultVsSelectedAccSwitch
                 checked: settings.recentsShowSelectedAcc
+                description: "Get data from chosen account on main page."
 
                 onCheckedChanged: {
 
@@ -262,7 +335,7 @@ Page {
 
             TextSwitch {
 
-                text: qsTr("Display working & cleared account balances")
+                text: qsTr("Display working & cleared balances")
                 id: recentsBalanceSwitch
                 checked: settings.recentsShowBalances
 
@@ -270,6 +343,133 @@ Page {
 
                     settings.recentsShowBalances = checked;
                     settings.sync();
+
+                }
+
+            }
+
+            SectionHeader {
+
+                text: qsTr("Cover Display")
+
+            }
+
+            ComboBox {
+
+                label: qsTr("Balance 1:")
+                width: parent.width
+                id: coverBalance1Combo
+
+                menu: ContextMenu {
+
+                    id: coverBalance1Menu
+
+                    Repeater {
+
+                        model: coverBalComboModel
+
+                        MenuItem {
+
+                            text: title
+
+                            onClicked: {
+
+                                settings.coverBalance1[0] = title;
+                                settings.coverBalance1[1] = uuid;
+                                settings.coverBalance1[2] = account;
+                                settings.coverBalance1[3] = cleared;
+                                settings.sync();
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+            ComboBox {
+
+                label: qsTr("Balance 2:")
+                width: parent.width
+                id: coverBalance2Combo
+
+                menu: ContextMenu {
+
+                    id: coverBalance2Menu
+
+                    Repeater {
+
+                        model: coverBalComboModel
+
+                        MenuItem {
+
+                            text: title
+
+                            onClicked: {
+
+                                settings.coverBalance2[0] = title;
+                                settings.coverBalance2[1] = uuid;
+                                settings.coverBalance2[2] = account;
+                                settings.coverBalance2[3] = cleared;
+                                settings.sync();
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+            SectionHeader {
+
+                text: qsTr("Authorization")
+
+            }
+
+            Label {
+
+                width: parent.width - Theme.horizontalPageMargin
+                text: qsTr("Logout")
+                leftPadding: Theme.horizontalPageMargin
+                bottomPadding: 0
+
+
+            }
+
+            Label {
+
+                id: forgetAccessKeyInfo
+                width: parent.width - Theme.horizontalPageMargin
+                text: qsTr("If 'Keep me logged in' was selected upon login, please instead revoke AddBuy's access from YNAB settings.\n")
+                wrapMode: Text.WordWrap
+                leftPadding: Theme.horizontalPageMargin
+                topPadding: 0
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryColor
+
+            }
+
+            ButtonLayout {
+
+                Button {
+
+                    id: forgetAccessKey
+                    text: "Forget Access Key"
+
+                    onClicked: {
+
+                        settings.accessKey = "";
+                        settings.sync();
+                        pageStack.clear();
+                        pageStack.replace(Qt.resolvedUrl("LoadBudget.qml"));
+
+                    }
 
                 }
 
@@ -305,8 +505,7 @@ Page {
                             horizontalAlignment: Qt.AlignHCenter
                             id: appTitleLabel
                             font.pixelSize: Theme.fontSizeLarge
-                            font.bold: true
-                            color: Theme.highlightColor
+                            color: Theme.primaryColor
                             bottomPadding: Theme.paddingMedium
 
                         }
@@ -318,8 +517,8 @@ Page {
                         id: titleSeparator
                         width: appTitleLabel.width
                         x: (page.width - this.width) * 0.5
-                        horizontalAlignment: Separator.Center
-                        color: Theme.primaryColor
+                        horizontalAlignment: Qt.AlignHCenter
+                        color: Theme.highlightColor
 
                     }
 
@@ -336,21 +535,61 @@ Page {
                             width: parent.width
                             id: aboutTextLabel
                             font.pixelSize: Theme.fontSizeExtraSmall
-                            font.styleName: Theme.primaryColor
+                            color: Theme.primaryColor
                             wrapMode: Text.Wrap
-                            text: qsTr("A simple transaction-entry app for YNAB on Sailfish OS.\n\nBy Michael J. Barrett\n\nVersion 0.1\nLicensed under GNU GPLv3\n\nAddBuy for YNAB is an unofficial application and is in no way associated with You Need A Budget.")
-                            bottomPadding: Theme.paddingLarge
+                            text: qsTr("A simple transaction-entry app for YNAB on Sailfish OS.\n\nBy Michael J. Barrett\n\nVersion 0.2\nLicensed under GNU GPLv3\n\nApp icon by JSEHV @ GitHub. Thanks for the contribution!\n\nAddBuy for YNAB is an unofficial application and is in no way associated with You Need A Budget LLC.")
+                            bottomPadding: Theme.paddingMedium
 
                         }
 
                     }
 
-                    Separator {
+                    Row {
 
-                        width: titleSeparator.width
-                        x: (page.width - this.width) * 0.5
-                        horizontalAlignment: Separator.Center
-                        color: Theme.primaryColor
+                        width: buyMeCoffeeLabel.paintedWidth
+                        x: (parent.width - this.width) * 0.5
+                        height: buyMeCoffeeLabel.height
+                        spacing: 0
+
+                        Label {
+
+                            topPadding: Theme.paddingLarge
+                            id: buyMeCoffeeLabel
+                            font.pixelSize: Theme.fontSizeTiny
+                            font.letterSpacing: 2
+                            color: Theme.highlightColor
+                            wrapMode: Text.Wrap
+                            text: qsTr("SUPPORT")
+                            bottomPadding: Theme.paddingMedium
+
+                        }
+
+                    }
+
+                    Row {
+
+                        id: linkToBMAC2Row
+                        width: parent.width * 0.6
+                        x: parent.width * 0.2
+                        spacing: 0
+                        height: linkToBMAC2.height + (Theme.paddingMedium * 2)
+
+                        Image {
+
+                            id: linkToBMAC2
+                            source: Theme.colorScheme == Theme.DarkOnLight ? "BMClogowithwordmark-black.png" : "BMClogowithwordmark-white.png"
+                            fillMode: Image.PreserveAspectFit
+                            width: parent.width
+                            y: Theme.paddingMedium
+
+                            MouseArea {
+
+                                anchors.fill: parent
+                                onClicked: Qt.openUrlExternally("https://www.buymeacoffee.com/michaeljb");
+
+                            }
+
+                        }
 
                     }
 
@@ -364,13 +603,12 @@ Page {
                         Label {
 
                             topPadding: Theme.paddingLarge
-                            width: parent.width
                             id: sendFeedbackLabel
-                            font.pixelSize: Theme.fontSizeExtraSmall
-                            font.italic: true
-                            font.styleName: Theme.primaryColor
+                            font.pixelSize: Theme.fontSizeTiny
+                            font.letterSpacing: 2
+                            color: Theme.highlightColor
                             wrapMode: Text.Wrap
-                            text: qsTr("Send feedback")
+                            text: qsTr("FEEDBACK")
                             bottomPadding: Theme.paddingMedium
 
                         }
@@ -380,7 +618,7 @@ Page {
                     Row {
 
                         spacing: 0
-                        height: linkToBMAC.height
+                        height: linkToBMAC2Row.height
                         width: emailIconSeparate.width + feedbackEmail.width
                         x: (parent.width - this.width) * 0.5
 
@@ -388,14 +626,13 @@ Page {
 
                             id: emailIconSeparate
                             source: "image://theme/icon-m-mail"
-                            fillMode: Image.PreserveAspectFit
-                            height: parent.height
                             verticalAlignment: Image.AlignVCenter
+                            y: (parent.height - this.height) * 0.5
 
                             MouseArea {
 
                                 anchors.fill: parent
-                                onClicked: Qt.openUrlExternally("mailto://mjbarrett@eml.cc?subject=AddBuy Feedback");
+                                onClicked: Qt.openUrlExternally("mailto:addbuy@mjbdev.net?subject=AddBuy Feedback");
 
                             }
 
@@ -405,26 +642,25 @@ Page {
 
                             id: feedbackEmail
                             height: parent.height
-                            font.pixelSize: Theme.fontSizeSmall
-                            color: Theme.highlightColor
-                            text: "mjbarrett@eml.cc"
+                            font.pixelSize: Theme.fontSizeLarge
+                            color: Theme.primaryColor
+                            text: "addbuy@mjbdev.net"
+                            font.bold: true
                             topPadding: 0
-                            bottomPadding: this.paintedHeight * 0.17 // making this adjustment to keep vertically centered look with lowercase email.
+                            bottomPadding: this.paintedHeight * 0.1
                             leftPadding: Theme.paddingSmall
                             verticalAlignment: Text.AlignVCenter
 
                             MouseArea {
 
                                 anchors.fill: parent
-                                onClicked: Qt.openUrlExternally("mailto:mjbarrett@eml.cc?subject=AddBuy Feedback");
+                                onClicked: Qt.openUrlExternally("mailto:addbuy@mjbdev.net?subject=AddBuy Feedback");
 
                             }
 
                         }
 
                     }
-
-
 
                     Row {
 
@@ -436,25 +672,24 @@ Page {
                         Label {
 
                             topPadding: Theme.paddingLarge
-                            width: parent.width
                             id: viewSourceCodeLabel
-                            font.pixelSize: Theme.fontSizeExtraSmall
-                            font.styleName: Theme.primaryColor
-                            font.italic: true
+                            font.pixelSize: Theme.fontSizeTiny
+                            font.letterSpacing: 2
+                            color: Theme.highlightColor
                             wrapMode: Text.Wrap
-                            text: qsTr("View source code")
+                            text: qsTr("SOURCE")
                             bottomPadding: Theme.paddingMedium
 
                         }
 
                     }
-                    
+
                     Row {
 
                         width: linkToGitHub.paintedWidth
                         x: (parent.width - this.width) * 0.5
                         spacing: 0
-                        height: linkToBMAC.height
+                        height: linkToBMAC2Row.height
 
                         Image {
 
@@ -476,55 +711,8 @@ Page {
 
                     Row {
 
-                        width: buyMeCoffeeLabel.paintedWidth
-                        x: (parent.width - this.width) * 0.5
-                        height: buyMeCoffeeLabel.height
-                        spacing: 0
-
-                        Label {
-
-                            topPadding: Theme.paddingLarge
-                            id: buyMeCoffeeLabel
-                            font.pixelSize: Theme.fontSizeExtraSmall
-                            font.styleName: Theme.primaryColor
-                            font.italic: true
-                            wrapMode: Text.Wrap
-                            text: qsTr("Support my work")
-                            bottomPadding: Theme.paddingMedium
-
-                        }
-
-                    }
-
-                    Row {
-
-                        width: parent.width * 0.4
-                        x: parent.width * 0.3
-                        spacing: 0
-                        height: linkToBMAC.height
-
-                        Image {
-
-                            id: linkToBMAC
-                            source: Theme.colorScheme == Theme.DarkOnLight ? "BMClogowithwordmark-black.png" : "BMClogowithwordmark-white.png"
-                            fillMode: Image.PreserveAspectFit
-                            width: parent.width
-
-                            MouseArea {
-
-                                anchors.fill: parent
-                                onClicked: Qt.openUrlExternally("https://buymeacoff.ee/michaeljb");
-
-                            }
-
-                        }
-
-                    }
-
-                    Row {
-
                         id: bmacGapRow
-                        height: Theme.paddingMedium + Theme.paddingLarge + Theme.paddingSmall
+                        height: Theme.paddingLarge
                         width: parent.width
 
                     }
@@ -546,6 +734,15 @@ Page {
 
     }
 
+    Notification {
+
+        id: settingsNotification
+        isTransient: true
+        appName: "AddBuy"
+        expireTimeout: 2000
+
+    }
+
     function loadAccountDataForMenu(url, callback) {
 
         var accountListFromServer = new XMLHttpRequest();
@@ -561,6 +758,12 @@ Page {
                     if (accountListFromServer.status === 200) {
 
                         // Accounts gathered successfully.
+
+                    }
+
+                    else if (accountListFromServer.status === 401 || accountListFromServer.status === 403) {
+
+                        // do something
 
                     }
 
