@@ -37,10 +37,4 @@ Requires a YNAB account (paid service, free trial available).
 - May be able to edit New Transaction page so that user doesn't have to restart app if switching to a different budget.
 - Adjust WebView settings so that 'Forget Access Key' also removes cookies and prevents automatic logging in again of user, and the need to remove the app from YNAB account settings instead. So far issues with adding cookies setting properties to the WebView object have prevented this.
 
-<h3>Support & Feedback</h3>
-
-- <a href="https://buymeacoffee.com/michaeljb">Buy Me A Coffee</a>
-- <a href="https://ko-fi.com/michaeljb">Support me on Ko-fi</a>
-- <a href="https://paypal.me/michaeljohnbarrett">PayPal.me</a>
-
 Feel free to leave feedback or contact at addbuy@mjbdev.net
