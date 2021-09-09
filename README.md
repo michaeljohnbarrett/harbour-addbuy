@@ -5,7 +5,8 @@ Version 0.2
 A simple transaction-entry app for YNAB on Sailfish OS.
 
 Privacy Policy: https://www.websitepolicies.com/policies/view/W6aKgySZ
-AddBuy doesn't store any user data other than the current access key string, and this can be removed on the Settings page. Note: If the user selected the 'Keep me logged in' option when initially authorizing the app, they'll need to deauthorize from their YNAB account settings to stop the app from automatically logging back in.
+
+Access key can be removed on the Settings page. Note: If the user selected the 'Keep me logged in' option when initially authorizing the app, they'll need to deauthorize from their YNAB account settings to stop the app from automatically logging back in.
 
 App icon by <a href="https://github.com/JSEHV">JSEHV</a>. Thanks for the contribution!
 
