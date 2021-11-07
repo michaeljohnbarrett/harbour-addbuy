@@ -14,6 +14,8 @@ TARGET = harbour-addbuy
 
 CONFIG += sailfishapp
 
+PKGCONFIG += qt5embedwidget
+
 SOURCES += src/harbour-addbuy.cpp
 
 DISTFILES += qml/harbour-addbuy.qml \
@@ -35,7 +37,7 @@ SAILFISHAPP_ICONS = 86x86 108x108 128x128 172x172
 
 # to disable building translations every time, comment out the
 # following CONFIG line
-CONFIG += sailfishapp_i18n
+# CONFIG += sailfishapp_i18n
 
 # German translation is enabled as an example. If you aren't
 # planning to localize your app, remember to comment out the
