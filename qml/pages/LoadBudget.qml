@@ -1,5 +1,7 @@
-import QtQuick 2.2
+import QtQuick 2.6
 import Sailfish.Silica 1.0
+import Sailfish.WebView 1.0
+import Sailfish.WebEngine 1.0
 import Nemo.Configuration 1.0
 import Nemo.Notifications 1.0
 import NetworkPostAccess 1.0
@@ -14,12 +16,22 @@ Page {
 
         if (settings.accessKey === "") {
 
+            webViewHeader.visible = true;
             authorizeUser.visible = true;
-            authorizeUser.url = "https://app.youneedabudget.com/oauth/authorize?client_id=0000000000000000000000-CLIENTID-GOES-HERE-0000000000000000000000&redirect_uri=https://mjbdev.net/addbuy/oauthSuccess.html&response_type=token";
+            //authorizeUser.height = (page.height - webViewHeader.height) * 0.6
+            authorizeUser.url = "https://app.youneedabudget.com/oauth/authorize?client_id=ec095b5d959f770038b415f6511e91b6c3362513ba25b6b94956b2d6d6b9849a&redirect_uri=https://mjbdev.net/addbuy/oauthSuccess.html&response_type=token";
 
         }
 
         else loadData();
+
+    }
+
+    PageHeader {
+
+        id: webViewHeader
+        title: qsTr("Authorize AddBuy")
+        visible: false
 
     }
 
@@ -44,7 +56,7 @@ Page {
                 Label {
 
                     id: appTitleLabel
-                    text: "AddBuy for YNAB"
+                    text: qsTr("AddBuy for YNAB")
                     font.pixelSize: Theme.fontSizeHuge
                     width: parent.width
                     height: parent.height
@@ -64,7 +76,7 @@ Page {
                 Label {
 
                     id: appVersionLabel
-                    text: "v0.2"
+                    text: "v0.2.1"
                     font.pixelSize: Theme.fontSizeMedium
                     color: Theme.secondaryColor
                     width: parent.width
@@ -156,27 +168,44 @@ Page {
         }
 
     }
+/*  Have tried to implement either of the following to allow disabling of cookies when customer chooses signout option on Settings page, to avoid
+    automatic relogin until user revokes from their YNAB settings. Unfortunately getting blank white page with either method, also with just the
+    autoLoadImages setting so it's something to do with WebEngineSettings, have followed example on doc pages with Component.onCompleted method and
+    import statements, also with WebViewPage as a parent. Will get back to figuring this out hopefully soon.
+    For now, warning label still needed on Settings page above Forget Access Key button that user'll need to revoke in YNAB account settings.
 
-    SilicaWebView {
+    Aware of WebEngineSettings option but unable to get this to work and unable to put too much more time into this as it was never going to be too
+    among SFOS even prior to YNAB price increase.
+
+    (Would normally be within a WebViewPage object which would contain WebView also, as per example)
+
+        WebEngineSettings {
+
+            cookieBehavior: loginWithCookies ? QMozEngineSettings.AcceptAll : QMozEngineSettings.BlockAll
+
+        }
+
+        --OR--
+
+        Component.onCompleted: {
+
+            if (loginWithCookies) WebEngineSettings.cookieBehavior = QMozEngineSettings.AcceptAll;
+            else WebEngineSettings.cookieBehavior = QMozEngineSettings.BlockAll;
+
+        }
+*/
+    WebView {
 
         id: authorizeUser
-        height: otherElements.visible ? page.height * 0.55 : page.height
         width: page.width
         visible: false
-        //_cookiesEnabled: settings.forceForgetSignIn ? false : true  <-- could not get web page to load with this property set either way.
 
         anchors {
 
             left: parent.left
             right: parent.right
-            top: parent.top
-
-        }
-
-        header: PageHeader {
-
-            id: webViewHeader
-            title: qsTr("Authorize AddBuy")
+            top: webViewHeader.bottom
+            bottom: parent.bottom
 
         }
 
@@ -218,6 +247,7 @@ Page {
 
                         loadingProgress = 0;
                         authorizeUser.visible = false;
+                        webViewHeader.visible = false;
                         otherElements.visible = false;
                         regularBudgetLoading.visible = true;
                         finishLoadingData();
@@ -227,8 +257,12 @@ Page {
                     else {
 
                         loadingDataBusy.running = false;
+                        authorizeUser.visible = false;
+                        webViewHeader.title = "Set Defaults";
+                        otherElements.visible = true;
                         chooseDefaultsRow.visible = true;
                         budgetListMenu.enabled = true;
+                        budgetChosenLoadAccounts(0, budgetID[0]);
 
                     }
 
@@ -245,19 +279,22 @@ Page {
         visible: false
         id: otherElements
         spacing: 0
-        height: page.height * 0.35
         width: page.width
+
+        contentHeight: defaultMenus.height
 
         anchors {
 
-            top: authorizeUser.bottom
+            top: webViewHeader.bottom
             left: parent.left
             right: parent.right
+            bottom: parent.bottom
 
         }
 
         Column {
 
+            id: defaultMenus
             height: parent.height
             width: parent.width
 
@@ -322,53 +359,7 @@ Page {
 
                                         onClicked: {
 
-                                            settings.defaultBudget = uuid;
-                                            settings.defaultBudgetIndex = index;
-                                            settings.sync();
-                                            loadingDataBusy.running = true;
-                                            loadAccountData('https://api.youneedabudget.com/v1/budgets/' + settings.defaultBudget + '/accounts', function (o) {
-
-                                                var accountList = JSON.parse(o.responseText);
-
-                                                if (o.status === 200) {
-
-                                                    var j = 0;
-
-                                                    accountsModel.clear();
-
-                                                    for (var i = 0; i < accountList.data.accounts.length; i++) {
-
-                                                        if (accountList.data.accounts[i].closed === false) {
-
-                                                            accountName[j] = accountList.data.accounts[i].name;
-                                                            accountID[j] = accountList.data.accounts[i].id;
-                                                            accountsModel.append({"title": accountName[j], "uuid": accountID[j]});
-                                                            j = j + 1;
-
-                                                        }
-
-                                                    }
-
-                                                    accountListMenu.enabled = true;
-                                                    requestTimeoutTimer.stop();
-                                                    loadingDataBusy.running = false;
-
-                                                }
-
-                                                else if (o.status === 401 || o.status === 403) {
-
-                                                    needNewKey(); // unlikely but could've waited two hours?
-
-                                                }
-
-                                                else {
-
-                                                    loadBudgetNotification.previewSummary = "Error gathering accounts."
-                                                    loadBudgetNotification.publish();
-
-                                                }
-
-                                            });
+                                            budgetChosenLoadAccounts(index, uuid);
 
                                         }
 
@@ -411,7 +402,6 @@ Page {
 
                                             settings.defaultAccount = uuid;
                                             settings.defaultAccountIndex = index;
-                                            settings.setupComplete = true
                                             settings.sync();
                                             continueButton.enabled = true;
 
@@ -913,6 +903,63 @@ Page {
         budgetListFromServer.setRequestHeader("Accept", "application/json");
         budgetListFromServer.setRequestHeader("Authorization", "Bearer " + settings.accessKey);
         budgetListFromServer.send('');
+
+    }
+
+    function budgetChosenLoadAccounts(defaultIndex, defaultUUID) {
+
+        settings.defaultBudget = defaultUUID;
+        settings.defaultBudgetIndex = defaultIndex;
+        settings.sync();
+        loadingDataBusy.running = true;
+        loadAccountData('https://api.youneedabudget.com/v1/budgets/' + settings.defaultBudget + '/accounts', function (o) {
+
+            var accountList = JSON.parse(o.responseText);
+
+            if (o.status === 200) {
+
+                var j = 0;
+
+                accountsModel.clear();
+
+                for (var i = 0; i < accountList.data.accounts.length; i++) {
+
+                    if (accountList.data.accounts[i].closed === false) {
+
+                        accountName[j] = accountList.data.accounts[i].name;
+                        accountID[j] = accountList.data.accounts[i].id;
+                        accountsModel.append({"title": accountName[j], "uuid": accountID[j]});
+                        j = j + 1;
+
+                    }
+
+                }
+
+                settings.defaultAccount = accountID[0]; // save first account as default, allow user to then change
+                settings.defaultAccountIndex = 0;
+                settings.sync();
+                accountListMenu.currentIndex = 0;
+                accountListMenu.enabled = true;
+                continueButton.enabled = true;
+                requestTimeoutTimer.stop();
+                loadingDataBusy.running = false;
+
+            }
+
+            else if (o.status === 401 || o.status === 403) {
+
+                needNewKey(); // unlikely but could've waited two hours?
+
+            }
+
+            else {
+
+                loadBudgetNotification.previewSummary = "Error gathering accounts."
+                loadBudgetNotification.publish();
+
+            }
+
+        });
 
     }
 

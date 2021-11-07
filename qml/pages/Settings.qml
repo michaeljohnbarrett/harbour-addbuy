@@ -1,4 +1,4 @@
-import QtQuick 2.2
+import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Nemo.Notifications 1.0
 
@@ -165,7 +165,7 @@ Page {
 
                                         else {
 
-                                            settingsNotification.previewSummary = "Error Loading Accounts - Please Re-access Page"
+                                            settingsNotification.previewSummary = qsTr("Error Loading Accounts - Please Re-access Page")
                                             settingsNotification.publish();
 
                                         }
@@ -261,7 +261,7 @@ Page {
 
                     MenuItem {
 
-                        text: qsTr("Last 30 days")
+                        text: ("Last 30 days")
 
                         onClicked: {
 
@@ -322,7 +322,7 @@ Page {
                 text: qsTr("Selected account overrides default")
                 id: defaultVsSelectedAccSwitch
                 checked: settings.recentsShowSelectedAcc
-                description: "Get data from chosen account on main page."
+                description: "Show data from account selected on main page."
 
                 onCheckedChanged: {
 
@@ -356,7 +356,7 @@ Page {
 
             ComboBox {
 
-                label: qsTr("Balance 1:")
+                label: qsTr("Balance 1")
                 width: parent.width
                 id: coverBalance1Combo
 
@@ -392,7 +392,7 @@ Page {
 
             ComboBox {
 
-                label: qsTr("Balance 2:")
+                label: qsTr("Balance 2")
                 width: parent.width
                 id: coverBalance2Combo
 
@@ -466,6 +466,26 @@ Page {
 
                         settings.accessKey = "";
                         settings.sync();
+                        loginWithCookies = false;
+                        pageStack.clear();
+                        pageStack.replace(Qt.resolvedUrl("LoadBudget.qml"));
+
+                    }
+
+                }
+
+                Button {
+
+                    id: debugLoginPage
+                    text: "[Dev] Clear key & defaults"
+
+                    onClicked: {
+
+                        settings.accessKey = "";
+                        settings.defaultBudget = "";
+                        settings.defaultAccount = "";
+                        settings.sync();
+                        loginWithCookies = false;
                         pageStack.clear();
                         pageStack.replace(Qt.resolvedUrl("LoadBudget.qml"));
 
@@ -537,7 +557,7 @@ Page {
                             font.pixelSize: Theme.fontSizeExtraSmall
                             color: Theme.primaryColor
                             wrapMode: Text.Wrap
-                            text: qsTr("A simple transaction-entry app for YNAB on Sailfish OS.\n\nBy Michael J. Barrett\n\nVersion 0.2\nLicensed under GNU GPLv3\n\nApp icon by JSEHV @ GitHub. Thanks for the contribution!\n\nAddBuy for YNAB is an unofficial application and is in no way associated with You Need A Budget LLC.")
+                            text: qsTr("A simple transaction-entry app for YNAB on Sailfish OS.\n\nby Michael J. Barrett\n\nVersion 0.2.1\nLicensed under GNU GPLv3\n\nApp icon by JSEHV @ GitHub. Thanks for the contribution!\n\nAddBuy for YNAB is an unofficial application and is in no way associated with You Need A Budget LLC.")
                             bottomPadding: Theme.paddingMedium
 
                         }
@@ -559,7 +579,7 @@ Page {
                             font.letterSpacing: 2
                             color: Theme.highlightColor
                             wrapMode: Text.Wrap
-                            text: qsTr("SUPPORT")
+                            text: qsTr("DONATE")
                             bottomPadding: Theme.paddingMedium
 
                         }

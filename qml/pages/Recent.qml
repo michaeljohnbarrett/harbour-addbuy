@@ -1,4 +1,4 @@
-import QtQuick 2.2
+import QtQuick 2.6
 import Sailfish.Silica 1.0
 import Nemo.Notifications 1.0
 
@@ -13,7 +13,7 @@ Page {
 
         ListElement {
 
-            dateShort: "..."; date: "..."; payee: "Loading..."; category: "..."; inflow: "..."; outflow: "..."; uncleared: false
+            dateShort: "..."; date: "..."; payee: qsTr("Loading..."); category: "..."; inflow: "..."; outflow: "..."; uncleared: false
 
         }
 
@@ -135,16 +135,16 @@ Page {
                             clearedBalance = formatFigure(accountBalances.data.account.cleared_balance);
 
                         }
-
+/* -- see note for identical code for accounts menu
                         else if (o.status === 401 || o.status === 403) {
 
                             needNewKey();
 
                         }
-
+*/
                         else {
 
-                            unknownError.previewSummary = "Unknown Error - Unable to Load Account Balances";
+                            unknownError.previewSummary = qsTr("Unknown Error - Unable to Load Account Balances");
                             unknownError.publish();
 
                         }
@@ -153,7 +153,7 @@ Page {
 
                 }
 
-                recentsListView.forceLayout();
+                //recentsListView.forceLayout(); // was possible cause of issue when accessing recent transactions after key expiration (blank page)
 
             }
 
@@ -165,7 +165,7 @@ Page {
 
             else {
 
-                unknownError.previewSummary = "Unknown Error - Unable to Load Transactions";
+                unknownError.previewSummary = qsTr("Unknown Error - Unable to Load Transactions");
                 unknownError.publish();
 
             }
@@ -201,7 +201,7 @@ Page {
 
                 ComboBox {
 
-                    label: "Account"
+                    label: qsTr("Account")
                     id: recentAccountBox
 
                     menu: ContextMenu {
@@ -296,16 +296,16 @@ Page {
                                                             workingBalanceFigureLabel.text = workingBalance;
 
                                                         }
-
+/* -- leave this to the recent transactions function to catch, possible that both functions calling 'needNewKey' was causing an issue
                                                         else if (o.status === 401 || o.status === 403) {
 
                                                             needNewKey();
 
                                                         }
-
+*/
                                                         else {
 
-                                                            unknownError.previewSummary = "Unknown Error - Unable to Load Account Balances";
+                                                            unknownError.previewSummary = qsTr("Unknown Error - Unable to Load Account Balances");
                                                             unknownError.publish();
 
                                                         }
@@ -314,7 +314,7 @@ Page {
 
                                                 }
 
-                                                recentsListView.forceLayout();
+                                                //recentsListView.forceLayout();
 
                                             }
 
@@ -326,7 +326,7 @@ Page {
 
                                             else {
 
-                                                unknownError.previewSummary = "Unknown Error - Unable to Load Transactions";
+                                                unknownError.previewSummary = qsTr("Unknown Error - Unable to Load Transactions");
                                                 unknownError.publish();
 
                                             }
@@ -359,7 +359,7 @@ Page {
 
                     id: clearedBalanceLabel
                     width: parent.width * 0.25 - (Theme.horizontalPageMargin)
-                    text: "Cleared:"
+                    text: qsTr("Cleared:")
                     font.pixelSize: Theme.fontSizeExtraSmall
                     bottomPadding: Theme.paddingMedium
 
@@ -392,7 +392,7 @@ Page {
 
                     id: workingBalanceLabel
                     width: parent.width * 0.25 - (Theme.horizontalPageMargin)
-                    text: "Working:"
+                    text: qsTr("Working:")
                     font.pixelSize: Theme.fontSizeExtraSmall
                     bottomPadding: Theme.paddingMedium
 
@@ -437,7 +437,7 @@ Page {
 
                 Label {
 
-                    text: "Date"
+                    text: qsTr("Date")
                     font.pixelSize: isPortrait ? Theme.fontSizeExtraSmall : Theme.fontSizeSmall
                     color: Theme.secondaryColor
                     width: isPortrait ? parent.width * 0.18 : parent.width * 0.14
@@ -448,7 +448,7 @@ Page {
 
                 Label {
 
-                    text: "Payee"
+                    text: qsTr("Payee")
                     font.pixelSize: isPortrait ? Theme.fontSizeExtraSmall : Theme.fontSizeSmall
                     color: Theme.secondaryColor
                     width: isPortrait ? (parent.width * 0.4) - Theme.paddingSmall : (parent.width * 0.27) - Theme.paddingSmall
@@ -459,7 +459,7 @@ Page {
 
                 Label {
 
-                    text: "Category"
+                    text: qsTr("Category")
                     visible: isPortrait ? false : true
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.secondaryColor
@@ -471,7 +471,7 @@ Page {
 
                 Label {
 
-                    text: "Inflow"
+                    text: qsTr("Inflow")
                     font.pixelSize: isPortrait ? Theme.fontSizeExtraSmall : Theme.fontSizeSmall
                     color: Theme.secondaryColor
                     horizontalAlignment: "AlignRight"
@@ -483,7 +483,7 @@ Page {
 
                 Label {
 
-                    text: "Outflow"
+                    text: qsTr("Outflow")
                     font.pixelSize: isPortrait ? Theme.fontSizeExtraSmall : Theme.fontSizeSmall
                     color: Theme.secondaryColor
                     horizontalAlignment: "AlignRight"
@@ -502,7 +502,6 @@ Page {
                 id: recentsListView
                 model: recentTransactionsModel
                 spacing: Theme.paddingSmall
-                VerticalScrollDecorator{flickable: recentsListView}
 
                 delegate: Row {
 
@@ -562,6 +561,12 @@ Page {
                         width: isPortrait ? (parent.width * 0.21) - Theme.paddingSmall : parent.width * 0.16 - Theme.paddingSmall
 
                     }
+
+                }
+
+                VerticalScrollDecorator {
+
+                    flickable: recentsListView
 
                 }
 

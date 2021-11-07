@@ -189,8 +189,16 @@ Page {
 
             PageHeader {
 
-                title: qsTr("AddBuy")
+                title: "AddBuy"
                 id: mainHeader
+
+            }
+
+            Row {
+
+                id: gapRow
+                width: parent.width
+                height: Theme.paddingMedium
 
             }
 
@@ -403,8 +411,8 @@ Page {
 
                         border {
 
-                            width: 6
-                            color: Theme.colorScheme == Theme.DarkOnLight ? "green" : "lightgreen"
+                            width: 7
+                            color: Theme.colorScheme == Theme.DarkOnLight ? "lightgreen" : "green"
 
                         }
 
@@ -414,8 +422,8 @@ Page {
 
                             anchors.centerIn: figureRectangleHorizontal
 
-                            width: figureRectangleHorizontal.width - 8
-                            height: figureRectangleHorizontal.height - 8
+                            width: figureRectangleHorizontal.width - 9
+                            height: figureRectangleHorizontal.height - 9
                             smooth: true
                             radius: 30
                             color: "transparent"
@@ -554,7 +562,7 @@ Page {
                     ListView {
 
                         width: parent.width
-                        height: searchField.focus ? page.height - (mainHeader.height + currencyRow.height + payeeFieldRow.height + (Theme.paddingMedium * 2)) : 0
+                        height: searchField.focus ? page.height - (gapRow.height + currencyRow.height + payeeFieldRow.height + (Theme.paddingMedium * 2)) : 0 // did include  mainHeader.height +  in 1st bracket
 
                         // prevent newly added list delegates from stealing focus away from the search field
                         currentIndex: -1
