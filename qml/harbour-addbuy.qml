@@ -1,5 +1,7 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import Sailfish.WebView 1.0
+import Sailfish.WebEngine 1.0
 import Nemo.Configuration 1.0
 import Nemo.Notifications 1.0
 import "pages"
@@ -22,21 +24,19 @@ ApplicationWindow {
         property string defaultBudget: ""
         property int defaultBudgetIndex
         property var coverBalance1: ["Default Working", "defaultWorking", true, false]
-        property string coverBalance1Label
-        property int coverBalance1Index: 0
-        property bool coverBalance1Cleared
-        property bool coverBalance1Category
+        //property string coverBalance1Label
+        //property int coverBalance1Index: 0
+        //property bool coverBalance1Cleared
+        //property bool coverBalance1Category
         property var coverBalance2: ["Default Cleared", "defaultCleared", true, true]
-        property string coverBalance2Label
-        property int coverBalance2Index: 1
-        property bool coverBalance2Cleared
-        property bool coverBalance2Category
+        //property string coverBalance2Label
+        //property int coverBalance2Index: 1
+        //property bool coverBalance2Cleared
+        //property bool coverBalance2Category
         property int recentDaysBack: 0 // default is one week
         property bool recentsOldToNew
         property bool recentsShowBalances
         property bool recentsShowSelectedAcc
-        property bool setupComplete: false
-        property bool forceForgetSignIn: true
 
     }
 
@@ -63,7 +63,7 @@ ApplicationWindow {
     property var accountWorkingBal: ["string"]
     property var coverBalComboList: ["Default Account Working", "Default Account Cleared"]
     property bool symbolFirst
-    property bool apiKeyAuthorized: true
+    property bool loginWithCookies: true
     property int chosenRecentsAccount
     property int chosenAccount
     property int decimalPlaces
@@ -179,6 +179,8 @@ ApplicationWindow {
                 if (myxhr.readyState === 4) {
 
                     callback(myxhr);
+
+
 
                 }
 

@@ -1,4 +1,4 @@
-import QtQuick 2.0
+import QtQuick 2.6
 import Sailfish.Silica 1.0
 
 CoverBackground {
@@ -106,7 +106,7 @@ CoverBackground {
 
             id: delegateItem
             width: parent.width
-            height: coverPage.size === Cover.Large ? coverPage.height * 0.4 : coverPage.height * 0.38
+            height: coverPage.size === Cover.Large ? coverPage.height * 0.4 : coverPage.height * 0.37
 
             Column {
 
@@ -124,7 +124,7 @@ CoverBackground {
                     maximumLineCount: coverPage.size === Cover.Large ? 2 : 1
                     truncationMode: coverPage.size === Cover.Large ? TruncationMode.None : TruncationMode.Fade
                     wrapMode: coverPage.size === Cover.Large ? Text.Wrap : Text.NoWrap
-                    color: model.index === 0 ? (authOrNetworkError ? Theme.errorColor : Theme.secondaryColor) : (authOrNetworkError ? Theme.primaryColor : Theme.secondaryColor)
+                    color: model.index === 0 ? (authOrNetworkError ? Theme.errorColor : Theme.highlightColor) : (authOrNetworkError ? Theme.primaryColor : Theme.highlightColor)
                     fontSizeMode: Text.Fit
                     minimumPixelSize: coverPage.size === Cover.Large ? Theme.fontSizeSmall : Theme.fontSizeTiny
 
@@ -167,8 +167,8 @@ CoverBackground {
 
         CoverAction {
 
-            iconSource: "image://theme/icon-cover-subview"
             id: refreshCoverAction
+            iconSource: "image://theme/icon-cover-subview"
 
             onTriggered: {
 
@@ -260,7 +260,7 @@ CoverBackground {
 
                                 authOrNetworkError = true;
                                 coverBalancesModel.set(0, {balDescription: "Authorization Error", balFigure: ""});
-                                coverBalancesModel.set(1, {balDescription: "Please reauthorize.", balFigure: ""});
+                                coverBalancesModel.set(1, {balDescription: "Please reauthorize", balFigure: ""});
 
                             }
 
