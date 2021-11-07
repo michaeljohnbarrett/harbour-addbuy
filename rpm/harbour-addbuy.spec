@@ -9,7 +9,7 @@ Name:       harbour-addbuy
 # << macros
 
 Summary:    AddBuy for YNAB
-Version:    0.2
+Version:    0.2.1
 Release:    1
 Group:      Qt/Qt
 License:    LICENSE
@@ -21,6 +21,7 @@ BuildRequires:  pkgconfig(sailfishapp) >= 1.0.2
 BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5Qml)
 BuildRequires:  pkgconfig(Qt5Quick)
+BuildRequires:  pkgconfig(qt5embedwidget)
 BuildRequires:  desktop-file-utils
 
 %description
