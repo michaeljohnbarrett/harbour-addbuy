@@ -474,25 +474,6 @@ Page {
 
                 }
 
-                Button {
-
-                    id: debugLoginPage
-                    text: "[Dev] Clear key & defaults"
-
-                    onClicked: {
-
-                        settings.accessKey = "";
-                        settings.defaultBudget = "";
-                        settings.defaultAccount = "";
-                        settings.sync();
-                        loginWithCookies = false;
-                        pageStack.clear();
-                        pageStack.replace(Qt.resolvedUrl("LoadBudget.qml"));
-
-                    }
-
-                }
-
             }
 
             SectionHeader {
