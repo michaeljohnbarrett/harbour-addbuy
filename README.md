@@ -30,4 +30,4 @@ Requires a YNAB account (paid service, free trial available).
 - User will need to reauthorize every two hours. Re-authorization when going to Recent Transactions does not always work and can result in a blank page. Settings page 'Forget Access Key' option or quitting and reopening the app are alternatives.
 - When choosing a category for a transaction, as long as the payee already exists (and was assigned a category), leaving the field as Default will assign the last category used with that payee. If entering a new payee, user will need to select a category to avoid leaving this field empty when saving.
 
-Feedback: addbuy@mjbdev.net
+Feedback: Here on GitHub or at addbuy@mjbdev.net
